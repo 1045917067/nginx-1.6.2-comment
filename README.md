@@ -12,6 +12,12 @@
 5. gcc之外其他编译器的代码.
 6. mail相关的代码.
 
+### 网址
+
+这篇注释的网址：https://github.com/langsim/nginx-1.6.2-comment
+
+推荐的读写工具：https://github.com/langsim/vim-ide
+
 
 ### 完成程度
 
@@ -24,7 +30,7 @@
 ### 函数链表
 
 1. http filter模块之间，ngx_http_top_header_filter和ngx_http_top_body_filter会形成两个函数链表, 链表中函数的调用顺序会和对应模块在ngx_modules数组的顺序相反。
-2. http请求处理的11个阶段中很多阶段都可以多个回调函数，同一个阶段的回调函数之间调用顺序和对应模块在ngx_modules数组里的顺序相同。　
+2. http请求处理的11个阶段中很多阶段都可以有多个回调函数，同一个阶段的回调函数之间调用顺序和对应模块在ngx_modules数组里的顺序相同。　
 
 
 ### 日志
