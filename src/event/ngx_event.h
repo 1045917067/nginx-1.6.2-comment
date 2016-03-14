@@ -35,7 +35,10 @@ typedef struct {
 } ngx_event_mutex_t;
 
 
+// 包含想要放到事件模型中需要的信息和从事件模型中取出后事件的状态信息
 struct ngx_event_s {
+    // 通常指向对应的ngx_connection_t对象，
+    // 在开启异步文件IO的时候有时指向ngx_event_aio_t结构体
     void            *data;
 
     unsigned         write:1;
@@ -51,6 +54,7 @@ struct ngx_event_s {
      */
     unsigned         active:1;
 
+    // epoll事件模型无用
     unsigned         disabled:1;
 
     /* the ready event; in aio mode 0 means that no operation can be posted */
@@ -110,6 +114,7 @@ struct ngx_event_s {
     unsigned         available:1;
 #endif
 
+    // 这个事件发生时的处理函数
     ngx_event_handler_pt  handler;
 
 
@@ -160,6 +165,7 @@ struct ngx_event_s {
 #endif
 
     /* the links of the posted queue */
+    // 把这个事件加入到ngx_posted_events或ngx_posted_accept_events里时使用的双向链表指针 
     ngx_event_t     *next;
     ngx_event_t    **prev;
 
@@ -446,8 +452,11 @@ extern ngx_event_actions_t   ngx_event_actions;
 
 // 把一个事件放到事件模型中
 #define ngx_add_event        ngx_event_actions.add
-#define ngx_del_event        ngx_event_actions.del
+// 把一个事件从事件模型中删除
+#define ngx_del_event        ngx_event_actions.del_conn
+// 将一个连接的读写事件都添加到事件模型中
 #define ngx_add_conn         ngx_event_actions.add_conn
+// 从事件模型中移除一个连接的读写事件
 #define ngx_del_conn         ngx_event_actions.del_conn
 
 #define ngx_add_timer        ngx_event_add_timer

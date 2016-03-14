@@ -10,7 +10,10 @@
 #include <ngx_event.h>
 
 
+// 占用负载均衡锁的进程会把accept事件都放到这个链表里，非accept事件都放到下面的链表里.
+// 目的是尽快解开负载均衡锁
 ngx_thread_volatile ngx_event_t  *ngx_posted_accept_events;
+// 放到这个全局链表里的事件会在这次事件处理的结尾，进入下次等待事件之前执行。
 ngx_thread_volatile ngx_event_t  *ngx_posted_events;
 
 #if (NGX_THREADS)
@@ -18,6 +21,7 @@ ngx_mutex_t                      *ngx_posted_events_mutex;
 #endif
 
 
+// 执行posted链表里的事件,并将事件从链表里删除
 void
 ngx_event_process_posted(ngx_cycle_t *cycle,
     ngx_thread_volatile ngx_event_t **posted)

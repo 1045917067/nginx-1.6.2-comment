@@ -129,7 +129,9 @@ typedef enum {
 #define NGX_SPDY_BUFFERED      0x02
 
 
-// 这个结构体每个对象对应一个外部请求连入的套接字。
+// 在nginx使用的每一个套接字都会对应一个这个结构体对象，
+// 可能的套接字类型：监听套接字，客户端连入的套接字，nginx作为客户端连出的TCP/UDP套接字，
+//                  父子进程间通信用的unix套接字,
 struct ngx_connection_s {
     // 不同场景有不同的用图，
     // 在ngx_cycle->free_connectionss链表中充当next指针。
@@ -137,7 +139,7 @@ struct ngx_connection_s {
     void               *data;
     // 连接对应的读事件，在程序启动时初始化好。
     ngx_event_t        *read;
-    // 连接对应的写事件，在程序启动时以初始化好。
+    // 连接对应的写事件，在程序启动时初始化好。
     ngx_event_t        *write;
 
     // 连接对应的文件描述符

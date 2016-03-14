@@ -5,7 +5,7 @@
  */
 
 // 这个文件是一个将handler函数设置为clcf->handler的http handler模块，
-// 当请求的location配置了这个模块的功能，返回nginx当前的连接数等运行状态
+// 当请求的location配置了这个模块的功能，返回nginx当前的连接数等运行状态 
 
 #include <ngx_config.h>
 #include <ngx_core.h>

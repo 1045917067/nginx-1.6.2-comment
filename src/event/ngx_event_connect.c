@@ -15,6 +15,7 @@
 
 // 运行socket() bind() setsockopt() connect()创建连接外部服务器的套接字，
 // 并用创建出的套接字封装ngx_peer_connection_t对象。
+// pc[in&out]:
 ngx_int_t
 ngx_event_connect_peer(ngx_peer_connection_t *pc)
 {

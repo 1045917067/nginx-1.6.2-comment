@@ -117,8 +117,11 @@ static void ngx_epoll_eventfd_handler(ngx_event_t *ev);
 static void *ngx_epoll_create_conf(ngx_cycle_t *cycle);
 static char *ngx_epoll_init_conf(ngx_cycle_t *cycle, void *conf);
 
+// epoll系列函数使用的fd
 static int                  ep = -1;
+// epoll_wait()的第二个参数
 static struct epoll_event  *event_list;
+// epoll_wait()的第三个参数
 static ngx_uint_t           nevents;
 
 #if (NGX_HAVE_FILE_AIO)
@@ -135,6 +138,7 @@ static ngx_str_t      epoll_name = ngx_string("epoll");
 
 static ngx_command_t  ngx_epoll_commands[] = {
 
+    // 做为epoll_wait()的第三个参数
     { ngx_string("epoll_events"),
       NGX_EVENT_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_num_slot,
@@ -291,7 +295,8 @@ failed:
 
 #endif
 
-
+// 当使用epoll事件模型时，在ngx_event_process_init()中调用，
+// 也就是在每个worker进程初始化时调用
 static ngx_int_t
 ngx_epoll_init(ngx_cycle_t *cycle, ngx_msec_t timer)
 {
@@ -345,6 +350,8 @@ ngx_epoll_init(ngx_cycle_t *cycle, ngx_msec_t timer)
 }
 
 
+// 如果配置了epoll事件模型，在调用ngx_done_events()时，会调用到这个函数。
+// 除了多线程没有见到使用的地方 
 static void
 ngx_epoll_done(ngx_cycle_t *cycle)
 {
@@ -383,6 +390,7 @@ ngx_epoll_done(ngx_cycle_t *cycle)
 }
 
 
+// 把一个事件放到事件模型中
 static ngx_int_t
 ngx_epoll_add_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
 {
@@ -441,6 +449,7 @@ ngx_epoll_add_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
 }
 
 
+// 把一个事件从事件模型中删除
 static ngx_int_t
 ngx_epoll_del_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
 {
@@ -499,6 +508,7 @@ ngx_epoll_del_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
 }
 
 
+// 将一个连接的读写事件都添加到事件模型中
 static ngx_int_t
 ngx_epoll_add_connection(ngx_connection_t *c)
 {
@@ -523,6 +533,7 @@ ngx_epoll_add_connection(ngx_connection_t *c)
 }
 
 
+// 从事件模型中移除一个连接的读写事件
 static ngx_int_t
 ngx_epoll_del_connection(ngx_connection_t *c, ngx_uint_t flags)
 {
@@ -561,6 +572,7 @@ ngx_epoll_del_connection(ngx_connection_t *c, ngx_uint_t flags)
 }
 
 
+// 使用epoll事件模型时等待事件和处理事件
 static ngx_int_t
 ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
 {
@@ -624,7 +636,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
         rev = c->read;
 
         if (c->fd == -1 || rev->instance != instance) {
-
+        // 事件已经过期
             /*
              * the stale event from a file descriptor
              * that was just closed in this iteration
@@ -667,6 +679,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
             revents |= EPOLLIN|EPOLLOUT;
         }
 
+        // 处理读事件, 读事件分普通读事件和accept事件
         if ((revents & EPOLLIN) && rev->active) {
 
 #if (NGX_HAVE_EPOLLRDHUP)
@@ -693,6 +706,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
             }
         }
 
+        // 处理写事件
         wev = c->write;
 
         if ((revents & EPOLLOUT) && wev->active) {
@@ -817,6 +831,7 @@ ngx_epoll_eventfd_handler(ngx_event_t *ev)
 #endif
 
 
+// ngx_epoll_module模块的 
 static void *
 ngx_epoll_create_conf(ngx_cycle_t *cycle)
 {

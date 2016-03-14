@@ -4,6 +4,7 @@
  * Copyright (C) Nginx, Inc.
  */
 
+// 这个文件定义了和accept事件相关的一些函数
 
 #include <ngx_config.h>
 #include <ngx_core.h>
@@ -63,6 +64,7 @@ ngx_event_accept(ngx_event_t *ev)
 
 #if (NGX_HAVE_ACCEPT4)
         if (use_accept4) {
+            // accept4()可以直接让返回的套接字是非阻塞属性
             s = accept4(lc->fd, (struct sockaddr *) sa, &socklen,
                         SOCK_NONBLOCK);
         } else {
@@ -140,6 +142,7 @@ ngx_event_accept(ngx_event_t *ev)
         (void) ngx_atomic_fetch_add(ngx_stat_accepted, 1);
 #endif
 
+        // 设置负载均衡阀值，空闲连接只剩1/8时，开启负载均衡功能
         ngx_accept_disabled = ngx_cycle->connection_n / 8
                               - ngx_cycle->free_connection_n;
 
@@ -358,6 +361,7 @@ ngx_event_accept(ngx_event_t *ev)
         log->data = NULL;
         log->handler = NULL;
 
+        // 调用这个端口对应的回调函数
         ls->handler(c);
 
         if (ngx_event_flags & NGX_USE_KQUEUE_EVENT) {
@@ -373,7 +377,8 @@ ngx_int_t
 ngx_trylock_accept_mutex(ngx_cycle_t *cycle)
 {
     if (ngx_shmtx_trylock(&ngx_accept_mutex)) {
-    // 获取负载均衡锁成功
+    // 获取负载均衡锁成功, 如果之前就获取成功了负载均衡锁，直接返回，
+    // 如果刚获取成功负载均衡锁，将监听端口的accept事件放回事件模型里
         ngx_log_debug0(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                        "accept mutex locked");
 
@@ -400,6 +405,7 @@ ngx_trylock_accept_mutex(ngx_cycle_t *cycle)
                    "accept mutex lock failed: %ui", ngx_accept_mutex_held);
 
     if (ngx_accept_mutex_held) {
+
         // 将监听端口的accept事件从事件模型里移出
         if (ngx_disable_accept_events(cycle) == NGX_ERROR) {
             return NGX_ERROR;

@@ -29,6 +29,8 @@ static ngx_int_t ngx_http_request_body_save_filter(ngx_http_request_t *r,
 
 
 // 读取客户端发给nginx的http包体。
+// webdav的PUT等方法会调用这个函数接收客户端包体，
+// 做反向代理时回调用这个函数，接收上游服务器包体。
 ngx_int_t
 ngx_http_read_client_request_body(ngx_http_request_t *r,
     ngx_http_client_body_handler_pt post_handler)

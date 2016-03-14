@@ -53,6 +53,7 @@ ngx_event_actions_t   ngx_event_actions;
 
 
 static ngx_atomic_t   connection_counter = 1;
+// 连入和连出的连接数累计总和
 ngx_atomic_t         *ngx_connection_counter = &connection_counter;
 
 
@@ -60,6 +61,7 @@ ngx_atomic_t         *ngx_accept_mutex_ptr;
 ngx_shmtx_t           ngx_accept_mutex;
 // 为1表明配置文件里配置了通过加锁解决惊群问题的功能
 ngx_uint_t            ngx_use_accept_mutex;
+// epoll事件模型下永远为零
 ngx_uint_t            ngx_accept_events;
 //1表示当前获取了ngx_accept_mutex锁
 //0表示当前并没有获取到ngx_accept_mutex锁
@@ -172,6 +174,7 @@ static ngx_command_t  ngx_event_core_commands[] = {
       offsetof(ngx_event_conf_t, accept_mutex),
       NULL },
 
+    // 获取不到负载均衡锁的worker在epoll_wait()中的最长超时时间
     { ngx_string("accept_mutex_delay"),
       NGX_EVENT_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_msec_slot,
@@ -242,6 +245,7 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
     if (ngx_use_accept_mutex) {
     // 表明需要通过加锁解决惊群问题
         if (ngx_accept_disabled > 0) {
+        // 空闲连接只剩下不到总连接数的1/8
             ngx_accept_disabled--;
 
         } else {
@@ -272,10 +276,12 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                    "timer delta: %M", delta);
 
+    // 处理ngx_posted_accept_events事件链表 
     if (ngx_posted_accept_events) {
         ngx_event_process_posted(cycle, &ngx_posted_accept_events);
     }
 
+    // 释放这个进程的ngx_accept_mutex锁
     if (ngx_accept_mutex_held) {
         ngx_shmtx_unlock(&ngx_accept_mutex);
     }
@@ -288,6 +294,7 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                    "posted events %p", ngx_posted_events);
 
+    // 处理ngx_posted_events事件链表 
     if (ngx_posted_events) {
         if (ngx_threaded) {
             ngx_wakeup_worker_thread(cycle);
@@ -528,6 +535,7 @@ ngx_event_module_init(ngx_cycle_t *cycle)
 
     /* cl should be equal to or greater than cache line size */
 
+    // 给每个字段都分配128字节，高效利用CPU CACHE。
     cl = 128;
 
     size = cl            /* ngx_accept_mutex */
@@ -877,6 +885,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
 
 #else
 
+        // 将accept事件的回调函数设置为ngx_event_accept
         rev->handler = ngx_event_accept;
 
         if (ngx_use_accept_mutex) {
