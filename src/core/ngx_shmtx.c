@@ -67,7 +67,7 @@ ngx_shmtx_destroy(ngx_shmtx_t *mtx)
 }
 
 
-// 支持原子变量时的非阻塞获得锁函数,
+// 支持原子变量时以非阻塞的方式获得锁
 // return: 1 成功获得锁，0 没有获得锁
 ngx_uint_t
 ngx_shmtx_trylock(ngx_shmtx_t *mtx)
@@ -76,7 +76,7 @@ ngx_shmtx_trylock(ngx_shmtx_t *mtx)
 }
 
 
-// 支持原子变量时的阻塞获得锁函数
+// 支持原子变量时以阻塞的方式获得锁
 void
 ngx_shmtx_lock(ngx_shmtx_t *mtx)
 {

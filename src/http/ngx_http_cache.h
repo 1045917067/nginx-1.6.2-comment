@@ -33,8 +33,11 @@ typedef struct {
 } ngx_http_cache_valid_t;
 
 
+// 这个结构体的一个对象对应一个缓存文件
 typedef struct {
+    // 将这个对象存在一个红黑树中，可以快速查找某个缓存文件是否已存在
     ngx_rbtree_node_t                node;
+    // 将这个对象存在一个双向链表中，可以快速得到即将过期的对象
     ngx_queue_t                      queue;
 
     u_char                           key[NGX_HTTP_CACHE_KEY_LEN
@@ -109,10 +112,11 @@ typedef struct {
 
 
 typedef struct {
-    // 共享内存建的红黑树, 以后用来查找某个文件在cache索引中是否已存在。
+    // 共享内存建的红黑树, 用来查找某个文件在cache索引中是否已存在。
     ngx_rbtree_t                     rbtree;  
     // 上面红黑树的哨兵节点。
     ngx_rbtree_node_t                sentinel;
+    // 双向链表，用来取出最先过期的元素
     ngx_queue_t                      queue;
     // cache loader 进程是否已经运行过
     ngx_atomic_t                     cold;    

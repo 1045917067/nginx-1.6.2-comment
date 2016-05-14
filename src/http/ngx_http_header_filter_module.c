@@ -5,7 +5,7 @@
  */
 
 // 这个文件是一个http filter模块，
-// 用于对http响应的header进行最后处理。
+// 根据r->headers_out对象等生成http响应的首行和头部字符串
 
 #include <ngx_config.h>
 #include <ngx_core.h>
@@ -148,7 +148,7 @@ ngx_http_header_out_t  ngx_http_headers_out[] = {
     { ngx_null_string, 0 }
 };
 
-
+// ngx_http_top_header_filter链表的最后一个函数
 static ngx_int_t
 ngx_http_header_filter(ngx_http_request_t *r)
 {
@@ -197,6 +197,7 @@ ngx_http_header_filter(ngx_http_request_t *r)
         }
     }
 
+    // 计算http响应首行和头部的总长度
     len = sizeof("HTTP/1.x ") - 1 + sizeof(CRLF) - 1
           /* the end of the header */
           + sizeof(CRLF) - 1;
@@ -440,6 +441,8 @@ ngx_http_header_filter(ngx_http_request_t *r)
                + sizeof(CRLF) - 1;
     }
 
+    // 根据r->headers_out对象等生成http响应的首行和头部字符串
+    // 申请存放http响应首行和头部字符串的内存，并进行赋值
     b = ngx_create_temp_buf(r->pool, len);
     if (b == NULL) {
         return NGX_ERROR;
@@ -622,13 +625,17 @@ ngx_http_header_filter(ngx_http_request_t *r)
     out.buf = b;
     out.next = NULL;
 
+    // 发送响应状态行和首部out
     return ngx_http_write_filter(r, &out);
 }
 
 
+// postconfiguration回调函数
 static ngx_int_t
 ngx_http_header_filter_init(ngx_conf_t *cf)
 {
+
+    // 使ngx_http_header_filter作为ngx_http_top_header_filter链表的最后一个函数
     ngx_http_top_header_filter = ngx_http_header_filter;
 
     return NGX_OK;

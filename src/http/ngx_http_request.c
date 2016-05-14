@@ -193,6 +193,8 @@ ngx_http_header_t  ngx_http_headers_in[] = {
 };
 
 
+// http监听端口收到accept()请求后会调用的http框架相关的第一个函数。
+// 由ngx_event_accept()调用
 void
 ngx_http_init_connection(ngx_connection_t *c)
 {
@@ -214,6 +216,8 @@ ngx_http_init_connection(ngx_connection_t *c)
         return;
     }
 
+    // 目的是将hc传递给ngx_http_wait_request_handler()
+    // 从hc中可知当前连接属于配置文件中的哪个server。
     c->data = hc;
 
     /* find the server configuration for the address:port */
@@ -351,7 +355,9 @@ ngx_http_init_connection(ngx_connection_t *c)
     }
 
     if (rev->ready) {
-        /* the deferred accept(), rtsig, aio, iocp */
+    // 如果使用了deferred accept也就是对套接字设置了TCP_DEFER_ACCEPT属性，
+    // accept事件回调时就已经有了客户端数据到达。这里可以直接调用rev事件的回调函数返回。
+    /* the deferred accept(), rtsig, aio, iocp */
 
         if (ngx_use_accept_mutex) {
             ngx_post_event(rev, &ngx_posted_events);
@@ -362,9 +368,13 @@ ngx_http_init_connection(ngx_connection_t *c)
         return;
     }
 
+
+    // 给读事件增加一个定时器，当处理超时时关闭连接
     ngx_add_timer(rev, c->listening->post_accept_timeout);
+    // 将c置为可重用状态，也就是当连接池中的ngx_connection_t对象不够用时会使用c,同时关闭这个连接
     ngx_reusable_connection(c, 1);
 
+    // 将读事件放到事件模型的等待队列
     if (ngx_handle_read_event(rev, 0) != NGX_OK) {
         ngx_http_close_connection(c);
         return;
@@ -372,6 +382,8 @@ ngx_http_init_connection(ngx_connection_t *c)
 }
 
 
+// 与客户端的连接后,客户端的第一包数据到达时调用的函数
+// ngx_http_init_connection()被调用只说明有客户端连接,并不一定有数据到达。
 static void
 ngx_http_wait_request_handler(ngx_event_t *rev)
 {
@@ -388,16 +400,19 @@ ngx_http_wait_request_handler(ngx_event_t *rev)
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "http wait request handler");
 
     if (rev->timedout) {
+    // 这个连接的处理已经超时
         ngx_log_error(NGX_LOG_INFO, c->log, NGX_ETIMEDOUT, "client timed out");
         ngx_http_close_connection(c);
         return;
     }
 
     if (c->close) {
+    // 因为连接池中ngx_connection_t对象不够用导致的c被重用或其他原因，要关闭这个连接
         ngx_http_close_connection(c);
         return;
     }
 
+    // 从传递过来的hc中得到cscf
     hc = c->data;
     cscf = ngx_http_get_module_srv_conf(hc->conf_ctx, ngx_http_core_module);
 
@@ -489,6 +504,8 @@ ngx_http_wait_request_handler(ngx_event_t *rev)
 
     c->log->action = "reading client request line";
 
+    // 将c从ngx_connection_t可重用链表里取出,
+    // 使c置于不再可重用状态
     ngx_reusable_connection(c, 0);
 
     c->data = ngx_http_create_request(c);
@@ -502,6 +519,7 @@ ngx_http_wait_request_handler(ngx_event_t *rev)
 }
 
 
+// 根据c创建一个ngx_http_request_t对象
 ngx_http_request_t *
 ngx_http_create_request(ngx_connection_t *c)
 {
@@ -902,6 +920,7 @@ ngx_http_ssl_servername(ngx_ssl_conn_t *ssl_conn, int *ad, void *arg)
 #endif
 
 
+// 接收并处理客户端发给nginx的http首行
 static void
 ngx_http_process_request_line(ngx_event_t *rev)
 {
@@ -918,6 +937,7 @@ ngx_http_process_request_line(ngx_event_t *rev)
                    "http process request line");
 
     if (rev->timedout) {
+    // 接收超时，结束请求
         ngx_log_error(NGX_LOG_INFO, c->log, NGX_ETIMEDOUT, "client timed out");
         c->timedout = 1;
         ngx_http_close_request(r, NGX_HTTP_REQUEST_TIME_OUT);
@@ -929,6 +949,7 @@ ngx_http_process_request_line(ngx_event_t *rev)
     for ( ;; ) {
 
         if (rc == NGX_AGAIN) {
+            // 接收客户端发给nginx的首行和头部,存放到r->header_in中
             n = ngx_http_read_request_header(r);
 
             if (n == NGX_AGAIN || n == NGX_ERROR) {
@@ -936,6 +957,7 @@ ngx_http_process_request_line(ngx_event_t *rev)
             }
         }
 
+        // 解析客户端请求的字符串的首行部分
         rc = ngx_http_parse_request_line(r, r->header_in);
 
         if (rc == NGX_OK) {
@@ -1051,6 +1073,7 @@ ngx_http_process_request_line(ngx_event_t *rev)
 }
 
 
+// 当r的首行已经接收解析完毕时，调用这个函数处理r的uri等成员
 ngx_int_t
 ngx_http_process_request_uri(ngx_http_request_t *r)
 {
@@ -1168,6 +1191,7 @@ ngx_http_process_request_uri(ngx_http_request_t *r)
 }
 
 
+// 接收并处理客户端发给nginx的http请求头部
 static void
 ngx_http_process_request_headers(ngx_event_t *rev)
 {
@@ -1203,6 +1227,7 @@ ngx_http_process_request_headers(ngx_event_t *rev)
 
         if (rc == NGX_AGAIN) {
 
+            // 初次申请的存放首行和头部的内存已不够用，要申请更大的内存
             if (r->header_in->pos == r->header_in->end) {
 
                 rv = ngx_http_alloc_large_header_buffer(r, 0);
@@ -1242,6 +1267,7 @@ ngx_http_process_request_headers(ngx_event_t *rev)
                 }
             }
 
+            // 接收客户端发给nginx的首行和头部,存放到r->header_in中
             n = ngx_http_read_request_header(r);
 
             if (n == NGX_AGAIN || n == NGX_ERROR) {
@@ -1316,7 +1342,7 @@ ngx_http_process_request_headers(ngx_event_t *rev)
         }
 
         if (rc == NGX_HTTP_PARSE_HEADER_DONE) {
-
+        // 已收到并处理完http请求的首行和头部
             /* a whole header has been parsed successfully */
 
             ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -1332,6 +1358,8 @@ ngx_http_process_request_headers(ngx_event_t *rev)
                 return;
             }
 
+            // 处理http请求，
+            // 也就是分析http请求，生成http响应和发送http响应,也可能包括接收http包体
             ngx_http_process_request(r);
 
             return;
@@ -1356,6 +1384,7 @@ ngx_http_process_request_headers(ngx_event_t *rev)
 }
 
 
+// 接收客户端发给nginx的首行和头部,存放到r->header_in中
 static ssize_t
 ngx_http_read_request_header(ngx_http_request_t *r)
 {
@@ -1413,6 +1442,7 @@ ngx_http_read_request_header(ngx_http_request_t *r)
 }
 
 
+// 在接收请求的首行或头部时如果预分配的内存不够用会调用这个函数申请更大的内存
 static ngx_int_t
 ngx_http_alloc_large_header_buffer(ngx_http_request_t *r,
     ngx_uint_t request_line)
@@ -1557,6 +1587,7 @@ ngx_http_alloc_large_header_buffer(ngx_http_request_t *r,
 }
 
 
+// ngx_http_header_t::handler回调函数，接收到客户端http头部某些字段后的回调函数
 static ngx_int_t
 ngx_http_process_header_line(ngx_http_request_t *r, ngx_table_elt_t *h,
     ngx_uint_t offset)
@@ -1573,6 +1604,7 @@ ngx_http_process_header_line(ngx_http_request_t *r, ngx_table_elt_t *h,
 }
 
 
+// ngx_http_header_t::handler回调函数，接收到客户端http头部某些字段后的回调函数
 static ngx_int_t
 ngx_http_process_unique_header_line(ngx_http_request_t *r, ngx_table_elt_t *h,
     ngx_uint_t offset)
@@ -1597,6 +1629,7 @@ ngx_http_process_unique_header_line(ngx_http_request_t *r, ngx_table_elt_t *h,
 }
 
 
+// ngx_http_header_t::handler回调函数，接收到客户端http头部某些字段后的回调函数
 static ngx_int_t
 ngx_http_process_host(ngx_http_request_t *r, ngx_table_elt_t *h,
     ngx_uint_t offset)
@@ -1638,6 +1671,7 @@ ngx_http_process_host(ngx_http_request_t *r, ngx_table_elt_t *h,
 }
 
 
+// ngx_http_header_t::handler回调函数，接收到客户端http头部某些字段后的回调函数
 static ngx_int_t
 ngx_http_process_connection(ngx_http_request_t *r, ngx_table_elt_t *h,
     ngx_uint_t offset)
@@ -1653,6 +1687,7 @@ ngx_http_process_connection(ngx_http_request_t *r, ngx_table_elt_t *h,
 }
 
 
+// ngx_http_header_t::handler回调函数，接收到客户端http头部某些字段后的回调函数
 static ngx_int_t
 ngx_http_process_user_agent(ngx_http_request_t *r, ngx_table_elt_t *h,
     ngx_uint_t offset)
@@ -1726,6 +1761,7 @@ ngx_http_process_user_agent(ngx_http_request_t *r, ngx_table_elt_t *h,
 }
 
 
+// ngx_http_header_t::handler回调函数，接收到客户端http头部某些字段后的回调函数
 static ngx_int_t
 ngx_http_process_multi_header_lines(ngx_http_request_t *r, ngx_table_elt_t *h,
     ngx_uint_t offset)
@@ -1755,6 +1791,7 @@ ngx_http_process_multi_header_lines(ngx_http_request_t *r, ngx_table_elt_t *h,
 }
 
 
+// 接收客户端http头部完成后，对收到的头部进行一些处理
 ngx_int_t
 ngx_http_process_request_header(ngx_http_request_t *r)
 {
@@ -1825,6 +1862,7 @@ ngx_http_process_request_header(ngx_http_request_t *r)
 }
 
 
+// 接收客户端的首行和头部完成后进入这个函数进行处理
 void
 ngx_http_process_request(ngx_http_request_t *r)
 {
@@ -1907,6 +1945,7 @@ ngx_http_process_request(ngx_http_request_t *r)
 }
 
 
+// 检测host是否是一个合法的server_name
 static ngx_int_t
 ngx_http_validate_host(ngx_str_t *host, ngx_pool_t *pool, ngx_uint_t alloc)
 {
@@ -1998,6 +2037,7 @@ ngx_http_validate_host(ngx_str_t *host, ngx_pool_t *pool, ngx_uint_t alloc)
 }
 
 
+// 根据host设置r的srv_conf和loc_conf成员
 static ngx_int_t
 ngx_http_set_virtual_server(ngx_http_request_t *r, ngx_str_t *host)
 {
@@ -2167,6 +2207,7 @@ ngx_http_find_virtual_server(ngx_connection_t *c,
 }
 
 
+// 当接收完http请求的首行和头部后这个连接的可读和可写的事件回调函数都会被设置为这个函数.
 static void
 ngx_http_request_handler(ngx_event_t *ev)
 {
@@ -2554,6 +2595,7 @@ ngx_http_finalize_connection(ngx_http_request_t *r)
 }
 
 
+// r->out中的数据还没有发完,将写事件回调函数置为发送数据的函数
 static ngx_int_t
 ngx_http_set_write_handler(ngx_http_request_t *r)
 {
@@ -2593,6 +2635,7 @@ ngx_http_set_write_handler(ngx_http_request_t *r)
 }
 
 
+// r->out中的数据还没有发完，调用这个函数继续发送
 static void
 ngx_http_writer(ngx_http_request_t *r)
 {
@@ -2688,6 +2731,7 @@ ngx_http_request_finalizer(ngx_http_request_t *r)
 }
 
 
+// epoll下这个函数相当于空函数
 void
 ngx_http_block_reading(ngx_http_request_t *r)
 {
@@ -3285,6 +3329,7 @@ ngx_http_lingering_close_handler(ngx_event_t *rev)
 }
 
 
+// 一些回调函数指针不能定义为空指针，所以要定义空的回调函数
 void
 ngx_http_empty_handler(ngx_event_t *wev)
 {
@@ -3294,6 +3339,7 @@ ngx_http_empty_handler(ngx_event_t *wev)
 }
 
 
+// 一些回调函数指针不能定义为空指针，所以要定义空的回调函数
 void
 ngx_http_request_empty_handler(ngx_http_request_t *r)
 {
@@ -3495,6 +3541,9 @@ ngx_http_free_request(ngx_http_request_t *r, ngx_int_t rc)
 }
 
 
+// 调用NGX_HTTP_LOG_PHASE阶段的处理函数
+// 这个函数在ngx_http_finalize_request()和ngx_http_free_request()中被调用，
+// 其他阶段的处理函数在ngx_http_core_run_phases()中调用
 static void
 ngx_http_log_request(ngx_http_request_t *r)
 {
@@ -3546,6 +3595,7 @@ ngx_http_close_connection(ngx_connection_t *c)
 }
 
 
+// 记录http日志时的回调函数,会赋值给ngx_log_t::handler
 static u_char *
 ngx_http_log_error(ngx_log_t *log, u_char *buf, size_t len)
 {
@@ -3578,6 +3628,8 @@ ngx_http_log_error(ngx_log_t *log, u_char *buf, size_t len)
 }
 
 
+// 会赋值给ngx_http_request_t::log_handler
+// 在ngx_http_log_error()被回调
 static u_char *
 ngx_http_log_error_handler(ngx_http_request_t *r, ngx_http_request_t *sr,
     u_char *buf, size_t len)

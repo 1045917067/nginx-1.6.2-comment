@@ -41,25 +41,31 @@ struct ngx_event_s {
     // 在开启异步文件IO的时候有时指向ngx_event_aio_t结构体
     void            *data;
 
+    // 事件处于可写状态
     unsigned         write:1;
 
+    // 这个事件是accept类型的事件
     unsigned         accept:1;
 
     /* used to detect the stale events in kqueue, rtsig, and epoll */
+    // 用来标识事件是否过期
     unsigned         instance:1;
 
     /*
      * the event was passed or would be passed to a kernel;
      * in aio mode - operation was posted.
      */
+    // 这个事件已经被加入到事件模型中
     unsigned         active:1;
 
     // epoll事件模型无用
     unsigned         disabled:1;
 
     /* the ready event; in aio mode 0 means that no operation can be posted */
+    // 当前时间已就绪，可被处理
     unsigned         ready:1;
 
+    // epoll事件模型无用
     unsigned         oneshot:1;
 
     /* aio operation is complete */
@@ -68,14 +74,19 @@ struct ngx_event_s {
     unsigned         eof:1;
     unsigned         error:1;
 
+    // 这个定时器事件已经超时
     unsigned         timedout:1;
+    // 这个事件存在与定时器中
     unsigned         timer_set:1;
 
+    // 为1表示事件需要延时处理，仅用于限速模块
     unsigned         delayed:1;
 
+    // 表示有数据到达才触发accept事件
     unsigned         deferred_accept:1;
 
     /* the pending eof reported by kqueue, epoll or in aio chain operation */
+    // epoll事件模型无用
     unsigned         pending_eof:1;
 
 #if !(NGX_THREADS)
@@ -132,6 +143,7 @@ struct ngx_event_s {
 
     ngx_log_t       *log;
 
+    // 定时器使用的红黑树节点
     ngx_rbtree_node_t   timer;
 
     unsigned         closed:1;
@@ -493,6 +505,8 @@ typedef struct {
 } ngx_event_conf_t;
 
 
+
+// 当ngx_module_t::type==NGX_HTTP_MODULE时，ngx_module_t::ctx将指向ngx_event_module_t的一个对象。
 typedef struct {
     ngx_str_t              *name;
 

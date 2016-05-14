@@ -4,6 +4,7 @@
  * Copyright (C) Nginx, Inc.
  */
 
+// 这组头文件和实现文件定义了轮询负载均衡模块的一些函数
 
 #ifndef _NGX_HTTP_UPSTREAM_ROUND_ROBIN_H_INCLUDED_
 #define _NGX_HTTP_UPSTREAM_ROUND_ROBIN_H_INCLUDED_

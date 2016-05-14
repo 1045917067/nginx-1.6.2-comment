@@ -196,6 +196,7 @@ static ngx_str_t  ngx_http_gzip_private = ngx_string("private");
 
 static ngx_command_t  ngx_http_core_commands[] = {
 
+    // 存放变量的哈希表的单个桶大小
     { ngx_string("variables_hash_max_size"),
       NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_num_slot,
@@ -203,6 +204,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_main_conf_t, variables_hash_max_size),
       NULL },
 
+    // 存放变量的哈希表的最多有多少个桶
     { ngx_string("variables_hash_bucket_size"),
       NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_num_slot,
@@ -210,6 +212,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_main_conf_t, variables_hash_bucket_size),
       NULL },
 
+    // 存放server_name的哈希表的单个桶大小
     { ngx_string("server_names_hash_max_size"),
       NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_num_slot,
@@ -217,6 +220,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_main_conf_t, server_names_hash_max_size),
       NULL },
 
+    // 存放server_name的哈希表的最多有多少个桶
     { ngx_string("server_names_hash_bucket_size"),
       NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_num_slot,
@@ -232,6 +236,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       0,
       NULL },
 
+    // r->connection->pool存放小块内存的单块内存大小
     { ngx_string("connection_pool_size"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_size_slot,
@@ -239,6 +244,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_srv_conf_t, connection_pool_size),
       &ngx_http_core_pool_size_p },
 
+    // r->pool存放小块内存的单块内存大小
     { ngx_string("request_pool_size"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_size_slot,
@@ -246,6 +252,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_srv_conf_t, request_pool_size),
       &ngx_http_core_pool_size_p },
 
+    // 接收http请求首行和头部的超时时间，默认60s
     { ngx_string("client_header_timeout"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_msec_slot,
@@ -253,6 +260,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_srv_conf_t, client_header_timeout),
       NULL },
 
+    // 接收http请求首行和头部的初始内存大小
     { ngx_string("client_header_buffer_size"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_size_slot,
@@ -260,6 +268,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_srv_conf_t, client_header_buffer_size),
       NULL },
 
+    // 接收http请求首行和头部的初始内存大小不够用后，会申请多大的内存
     { ngx_string("large_client_header_buffers"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_TAKE2,
       ngx_conf_set_bufs_slot,
@@ -267,6 +276,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_srv_conf_t, large_client_header_buffers),
       NULL },
 
+    // 已设置为deprecated,由server_name_in_redirect代替
     { ngx_string("optimize_server_names"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_FLAG,
       ngx_conf_set_flag_slot,
@@ -281,6 +291,8 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_srv_conf_t, ignore_invalid_headers),
       NULL },
 
+    // 是否将相邻的/合并成一个如果"//path///name"合并成"/path/name"。
+    // 默认打开
     { ngx_string("merge_slashes"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_FLAG,
       ngx_conf_set_flag_slot,
@@ -354,6 +366,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       0,
       NULL },
 
+    // 设置资源路径，location字符串不会出现在路径中。
     { ngx_string("alias"),
       NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_http_core_root,
@@ -368,6 +381,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       0,
       NULL },
 
+    // http请求包体的最大值
     { ngx_string("client_max_body_size"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_off_slot,
@@ -382,6 +396,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_loc_conf_t, client_body_buffer_size),
       NULL },
 
+    // 接收http请求包体的超市时间
     { ngx_string("client_body_timeout"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_msec_slot,
@@ -389,6 +404,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_loc_conf_t, client_body_timeout),
       NULL },
 
+    // 如果把包体缓存到文件，将缓存到的路径。
     { ngx_string("client_body_temp_path"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1234,
       ngx_conf_set_path_slot,
@@ -403,6 +419,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_loc_conf_t, client_body_in_file_only),
       &ngx_http_core_request_body_in_file },
 
+    // 尽量将包体存放在内存中，当包体大小大于client_body_buffer_size还是会被放在文件中
     { ngx_string("client_body_in_single_buffer"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
       ngx_conf_set_flag_slot,
@@ -421,6 +438,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_loc_conf_t, sendfile),
       NULL },
 
+    // 单次发送给客户端的内存大小的最大值
     { ngx_string("sendfile_max_chunk"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_size_slot,
@@ -495,6 +513,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_loc_conf_t, send_lowat),
       &ngx_http_core_lowat_post },
 
+    // 发送响应时单次最小发送大小
     { ngx_string("postpone_output"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_size_slot,
@@ -502,6 +521,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_loc_conf_t, postpone_output),
       NULL },
 
+    // 单个连接发送响应的最大速率
     { ngx_string("limit_rate"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LIF_CONF
                         |NGX_CONF_TAKE1,
@@ -510,6 +530,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_loc_conf_t, limit_rate),
       NULL },
 
+    // 不限速传输的响应大小。当传输量大于此值时，超出部分将限速传送。
     { ngx_string("limit_rate_after"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LIF_CONF
                         |NGX_CONF_TAKE1,
@@ -539,6 +560,8 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_loc_conf_t, keepalive_disable),
       &ngx_http_core_keepalive_disable },
 
+    // 为NGX_HTTP_SATISFY_ALL，所有NGX_HTTP_ACCESS_PHASE阶段的handler()都通过才认为有访问权限；
+    // 为NGX_HTTP_SATISFY_ANY，任意一个NGX_HTTP_ACCESS_PHASE阶段的handler()通过就认为有访问权限
     { ngx_string("satisfy"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_enum_slot,
@@ -546,6 +569,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_loc_conf_t, satisfy),
       &ngx_http_core_satisfy },
 
+    // 已被设置为deprecated,用satisfy代替
     { ngx_string("satisfy_any"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
       ngx_conf_set_flag_slot,
@@ -553,6 +577,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_loc_conf_t, satisfy),
       &ngx_conf_deprecated_satisfy_any },
 
+    // 这个location只能用与内部请求
     { ngx_string("internal"),
       NGX_HTTP_LOC_CONF|NGX_CONF_NOARGS,
       ngx_http_core_internal,
@@ -747,6 +772,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_loc_conf_t, open_file_cache_events),
       NULL },
 
+    // http回源时使用的dns解析地址
     { ngx_string("resolver"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
       ngx_http_core_resolver,
@@ -754,6 +780,7 @@ static ngx_command_t  ngx_http_core_commands[] = {
       0,
       NULL },
 
+    // 解析dns时的超时时间
     { ngx_string("resolver_timeout"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_msec_slot,
@@ -843,6 +870,7 @@ ngx_module_t  ngx_http_core_module = {
 ngx_str_t  ngx_http_core_get_method = { 3, (u_char *) "GET " };
 
 
+// 当接收完头部后进入这个函数处理
 void
 ngx_http_handler(ngx_http_request_t *r)
 {
@@ -911,6 +939,7 @@ ngx_http_core_run_phases(ngx_http_request_t *r)
 }
 
 
+// NGX_HTTP_POST_READ_PHASE, NGX_HTTP_PREACCESS_PHASE的checker()
 ngx_int_t
 ngx_http_core_generic_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
 {
@@ -924,14 +953,18 @@ ngx_http_core_generic_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "generic phase: %ui", r->phase_handler);
 
+    // 运行这个check函数对应的handler()，
     rc = ph->handler(r);
 
     if (rc == NGX_OK) {
+    // handler()返回NGX_OK进入下一阶段
         r->phase_handler = ph->next;
         return NGX_AGAIN;
     }
 
     if (rc == NGX_DECLINED) {
+    // handler()返回NGX_DECLINED，如果没有到这个阶段最后一个回调函数，调用这个阶段的下一个回调函数，
+    // 如果已经到了这个阶段的最后一个回调函数，调用下一个阶段的第一个回调函数
         r->phase_handler++;
         return NGX_AGAIN;
     }
@@ -948,6 +981,7 @@ ngx_http_core_generic_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
 }
 
 
+// NGX_HTTP_SERVER_REWRITE_PHASE, NGX_HTTP_REWRITE_PHASE的checker()
 ngx_int_t
 ngx_http_core_rewrite_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
 {
@@ -974,7 +1008,7 @@ ngx_http_core_rewrite_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
     return NGX_OK;
 }
 
-
+// NGX_HTTP_FIND_CONFIG_PHASE阶段的checker()回调函数
 ngx_int_t
 ngx_http_core_find_config_phase(ngx_http_request_t *r,
     ngx_http_phase_handler_t *ph)
@@ -1070,6 +1104,7 @@ ngx_http_core_find_config_phase(ngx_http_request_t *r,
 }
 
 
+// NGX_HTTP_POST_REWRITE_PHASE阶段的checker()回调函数
 ngx_int_t
 ngx_http_core_post_rewrite_phase(ngx_http_request_t *r,
     ngx_http_phase_handler_t *ph)
@@ -1143,13 +1178,14 @@ ngx_http_core_access_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
     if (clcf->satisfy == NGX_HTTP_SATISFY_ALL) {
-
+    // 所有NGX_HTTP_ACCESS_PHASE阶段的handler()返回NGX_OK才认为有访问权限；
         if (rc == NGX_OK) {
             r->phase_handler++;
             return NGX_AGAIN;
         }
 
     } else {
+    // 任意一个NGX_HTTP_ACCESS_PHASE阶段的handler()返回NGX_HTTP_FORBIDDEN就认为有访问权限
         if (rc == NGX_OK) {
             r->access_code = 0;
 
@@ -1207,6 +1243,7 @@ ngx_http_core_post_access_phase(ngx_http_request_t *r,
 }
 
 
+// NGX_HTTP_TRY_FILES_PHASE阶段的处理函数，
 ngx_int_t
 ngx_http_core_try_files_phase(ngx_http_request_t *r,
     ngx_http_phase_handler_t *ph)
@@ -1417,6 +1454,7 @@ ngx_http_core_try_files_phase(ngx_http_request_t *r,
 }
 
 
+// NGX_HTTP_CONTENT_PHASE阶段的处理函数。
 ngx_int_t
 ngx_http_core_content_phase(ngx_http_request_t *r,
     ngx_http_phase_handler_t *ph)
@@ -1426,7 +1464,9 @@ ngx_http_core_content_phase(ngx_http_request_t *r,
     ngx_str_t  path;
 
     if (r->content_handler) {
+    // 当clcf->handler不为空,
         r->write_event_handler = ngx_http_request_empty_handler;
+        // 当r->content_handler()返回值不为NGX_DECLINED时，NGX_HTTP_CONTENT_PHASE阶段的处理函数不再执行
         ngx_http_finalize_request(r, r->content_handler(r));
         return NGX_OK;
     }
@@ -1587,6 +1627,7 @@ ngx_http_core_find_location(ngx_http_request_t *r)
 
         /* look up nested locations */
 
+        // 递归查找子location
         rc = ngx_http_core_find_location(r);
     }
 
@@ -5225,6 +5266,7 @@ ngx_http_disable_symlinks(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 #endif
 
 
+// 在linux下无用
 static char *
 ngx_http_core_lowat_check(ngx_conf_t *cf, void *post, void *data)
 {

@@ -4,7 +4,7 @@
  * Copyright (C) Nginx, Inc.
  */
 
-// 这个文件包含了一个NGX_CORE_MODULE类型的模块和一个NGX_EVENT_MODULE类型的模块。 
+// 这个文件定义了ngx_event_module(NGX_CORE_MODULE类型)模块和ngx_event_core_module(NGX_EVENT_MODULE类型)模块。 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
@@ -37,9 +37,9 @@ static void *ngx_event_core_create_conf(ngx_cycle_t *cycle);
 static char *ngx_event_core_init_conf(ngx_cycle_t *cycle, void *conf);
 
 
-// 如果不为0是时间精度值。单位ms。
+// 如果不为0,则代表时间精度值。单位ms。
 static ngx_uint_t     ngx_timer_resolution;
-// 标识事件等待的退出是由更新时间全局变量的信号造成。
+// 如果不为0说明事件等待的退出是由SIGALRM信号造成。
 sig_atomic_t          ngx_event_timer_alarm;
 
 // 事件模块的个数。
@@ -1004,6 +1004,7 @@ ngx_events_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     cf->module_type = NGX_EVENT_MODULE;
     cf->cmd_type = NGX_EVENT_CONF;
 
+    // 解析配置文件中"event{...}"中的指令。
     rv = ngx_conf_parse(cf, NULL);
 
     *cf = pcf;

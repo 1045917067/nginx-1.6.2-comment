@@ -5,7 +5,7 @@
  */
 
 // 这个文件是一个加入到NGX_HTTP_PREACCESS_PHASE阶段的http handler模块
-// 这个模块用于限制单一ip的并发连接数
+// 这个模块用于限制同一ip或同一其他变量值的并发连接数
 
 #include <ngx_config.h>
 #include <ngx_core.h>
@@ -13,6 +13,7 @@
 
 
 typedef struct {
+    // 这个color不能被使用，是为了衔接ngx_rbtree_node_t的color
     u_char              color;
     u_char              len;
     u_short             conn;
@@ -84,6 +85,8 @@ static ngx_conf_num_bounds_t  ngx_http_limit_conn_status_bounds = {
 
 static ngx_command_t  ngx_http_limit_conn_commands[] = {
 
+    // 为限制一个ip的连接数而设置的共享内存块
+    // limit_conn_zone $variable zone=name:size;  $variable需是nginx内置变量，用来取客户端ip
     { ngx_string("limit_conn_zone"),
       NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE2,
       ngx_http_limit_conn_zone,
@@ -91,6 +94,8 @@ static ngx_command_t  ngx_http_limit_conn_commands[] = {
       0,
       NULL },
 
+    // 已被置于deprecated状态,由limit_conn_zone代替
+    // 因为容易和limit_req_zone指令产生歧义
     { ngx_string("limit_zone"),
       NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE3,
       ngx_http_limit_zone,
@@ -98,6 +103,7 @@ static ngx_command_t  ngx_http_limit_conn_commands[] = {
       0,
       NULL },
 
+    // 限值一个IP的最大连接数，及实现这条指令使用的共享内存的名字
     { ngx_string("limit_conn"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE2,
       ngx_http_limit_conn,
@@ -105,6 +111,7 @@ static ngx_command_t  ngx_http_limit_conn_commands[] = {
       0,
       NULL },
 
+    // 当超限时，打印log的级别
     { ngx_string("limit_conn_log_level"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_enum_slot,
@@ -112,6 +119,7 @@ static ngx_command_t  ngx_http_limit_conn_commands[] = {
       offsetof(ngx_http_limit_conn_conf_t, log_level),
       &ngx_http_limit_conn_log_levels },
 
+    // 当超限时，返回的http错误码
     { ngx_string("limit_conn_status"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_num_slot,
@@ -154,6 +162,7 @@ ngx_module_t  ngx_http_limit_conn_module = {
 };
 
 
+// 每个http请求在NGX_HTTP_PREACCESS_PHASE阶段会调用的回调函数
 static ngx_int_t
 ngx_http_limit_conn_handler(ngx_http_request_t *r)
 {
@@ -180,6 +189,7 @@ ngx_http_limit_conn_handler(ngx_http_request_t *r)
     for (i = 0; i < lccf->limits.nelts; i++) {
         ctx = limits[i].shm_zone->data;
 
+        // 获取限值并发数变量的值
         vv = ngx_http_get_indexed_variable(r, ctx->index);
 
         if (vv == NULL || vv->not_found) {
@@ -208,14 +218,18 @@ ngx_http_limit_conn_handler(ngx_http_request_t *r)
 
         ngx_shmtx_lock(&shpool->mutex);
 
+        // 从红黑树中查找这个变量值是否已经存在
         node = ngx_http_limit_conn_lookup(ctx->rbtree, vv, hash);
 
         if (node == NULL) {
+        // 这个变量值在红黑树中不存在,
+        // 创建一个node存储这个变量值的信息，并插入到红黑树中
 
             n = offsetof(ngx_rbtree_node_t, color)
                 + offsetof(ngx_http_limit_conn_node_t, data)
                 + len;
 
+            // 这个node将ngx_rbtree_node_t和ngx_http_limit_conn_node_t连起来使用
             node = ngx_slab_alloc_locked(shpool, n);
 
             if (node == NULL) {
@@ -234,10 +248,12 @@ ngx_http_limit_conn_handler(ngx_http_request_t *r)
             ngx_rbtree_insert(ctx->rbtree, node);
 
         } else {
+        // 这个变量值在红黑树中已存在,
 
             lc = (ngx_http_limit_conn_node_t *) &node->color;
 
             if ((ngx_uint_t) lc->conn >= limits[i].conn) {
+            // 这个变量值的并发连接数已达到上限，
 
                 ngx_shmtx_unlock(&shpool->mutex);
 
@@ -245,10 +261,12 @@ ngx_http_limit_conn_handler(ngx_http_request_t *r)
                               "limiting connections by zone \"%V\"",
                               &limits[i].shm_zone->shm.name);
 
+                // 将r对应的所有变量值并发数减一，并给客户端返回错误码lccf->status_code
                 ngx_http_limit_conn_cleanup_all(r->pool);
                 return lccf->status_code;
             }
 
+            // 这个变量值的并发连接数未达到上限，将这个变量值对应的并发数加一
             lc->conn++;
         }
 
@@ -274,6 +292,7 @@ ngx_http_limit_conn_handler(ngx_http_request_t *r)
 }
 
 
+// 这个模块自定义的红黑树插入节点函数
 static void
 ngx_http_limit_conn_rbtree_insert_value(ngx_rbtree_node_t *temp,
     ngx_rbtree_node_t *node, ngx_rbtree_node_t *sentinel)
@@ -315,6 +334,7 @@ ngx_http_limit_conn_rbtree_insert_value(ngx_rbtree_node_t *temp,
 }
 
 
+// 这个模块自定义的在rbtree中查找hash值对应的vv节点是否在红黑树中存在
 static ngx_rbtree_node_t *
 ngx_http_limit_conn_lookup(ngx_rbtree_t *rbtree, ngx_http_variable_value_t *vv,
     uint32_t hash)
@@ -355,6 +375,9 @@ ngx_http_limit_conn_lookup(ngx_rbtree_t *rbtree, ngx_http_variable_value_t *vv,
 }
 
 
+// 将data对应的变量值并发数减一，
+// 如果这个request已经是这个变量值的并发数的最后一个，
+// 顺便将这个变量值对应的红黑树节点释放 
 static void
 ngx_http_limit_conn_cleanup(void *data)
 {
@@ -386,6 +409,9 @@ ngx_http_limit_conn_cleanup(void *data)
 }
 
 
+// 将这个pool对应的request对应的所有变量值并发数减一，
+// 如果这个request已经是这个变量值的并发数的最后一个，
+// 顺便将这个变量值对应的红黑树节点释放 
 static ngx_inline void
 ngx_http_limit_conn_cleanup_all(ngx_pool_t *pool)
 {
@@ -402,6 +428,7 @@ ngx_http_limit_conn_cleanup_all(ngx_pool_t *pool)
 }
 
 
+// 这个模块使用的每一块共享内存区初始化时都会调用的回调函数
 static ngx_int_t
 ngx_http_limit_conn_init_zone(ngx_shm_zone_t *shm_zone, void *data)
 {
@@ -465,6 +492,7 @@ ngx_http_limit_conn_init_zone(ngx_shm_zone_t *shm_zone, void *data)
 }
 
 
+// ngx_http_module_t::create_loc_conf回调函数
 static void *
 ngx_http_limit_conn_create_conf(ngx_conf_t *cf)
 {
@@ -488,6 +516,7 @@ ngx_http_limit_conn_create_conf(ngx_conf_t *cf)
 }
 
 
+// ngx_http_module_t::merge_loc_conf回调函数
 static char *
 ngx_http_limit_conn_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 {
@@ -506,6 +535,7 @@ ngx_http_limit_conn_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 }
 
 
+// 解析配置文件时遇到limit_conn_zone指令时会调用的回调函数
 static char *
 ngx_http_limit_conn_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
@@ -619,6 +649,7 @@ ngx_http_limit_conn_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 }
 
 
+// 已设置为deprecated状态,用limit_conn_zone代替
 static char *
 ngx_http_limit_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
@@ -689,6 +720,7 @@ ngx_http_limit_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 }
 
 
+// 解析配置文件时遇到limit_conn指令时会调用的回调函数
 static char *
 ngx_http_limit_conn(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
@@ -750,6 +782,8 @@ ngx_http_limit_conn(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 }
 
 
+// postconfiguration回调函数
+// 将ngx_http_limit_conn_handler()加入到NGX_HTTP_PREACCESS_PHASE阶段的回调函数中
 static ngx_int_t
 ngx_http_limit_conn_init(ngx_conf_t *cf)
 {

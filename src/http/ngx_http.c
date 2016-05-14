@@ -289,6 +289,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     /* create location trees */
 
+    // 构造location组成的静态二叉平衡查找树
     for (s = 0; s < cmcf->servers.nelts; s++) {
 
         clcf = cscfp[s]->ctx->loc_conf[ngx_http_core_module.ctx_index];
@@ -303,7 +304,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     }
 
 
-    // 分配cmcf->phases数组使用内存。
+    // 初始化cmcf->phases数组。只初始化可以被介入自定义函数的7个阶段
     if (ngx_http_init_phases(cf, cmcf) != NGX_OK) {
         return NGX_CONF_ERROR;
     }
@@ -350,7 +351,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
 
     /* optimize the lists of ports, addresses and server names */
-
+    // 构造监听端口与server间的关联关系，设置http监听端口连接事件的回调函数。
     if (ngx_http_optimize_servers(cf, cmcf, cmcf->ports) != NGX_OK) {
         return NGX_CONF_ERROR;
     }

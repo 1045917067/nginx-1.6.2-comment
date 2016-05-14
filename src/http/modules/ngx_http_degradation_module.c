@@ -47,6 +47,7 @@ static ngx_command_t  ngx_http_degradation_commands[] = {
       0,
       NULL },
 
+    // 当发生错误时，返回响应中的错误状态码
     { ngx_string("degrade"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_enum_slot,
@@ -104,6 +105,8 @@ ngx_http_degradation_handler(ngx_http_request_t *r)
 }
 
 
+// 检测当前内存使用是否已超过上限
+// return: 内存使用已超过上限返回1，还没有超过上限返回0
 ngx_uint_t
 ngx_http_degraded(ngx_http_request_t *r)
 {

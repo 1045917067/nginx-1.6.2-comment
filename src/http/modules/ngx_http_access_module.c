@@ -70,6 +70,7 @@ static ngx_int_t ngx_http_access_init(ngx_conf_t *cf);
 
 static ngx_command_t  ngx_http_access_commands[] = {
 
+    // 允许某个地址范围访问
     { ngx_string("allow"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
                         |NGX_CONF_TAKE1,
@@ -78,6 +79,7 @@ static ngx_command_t  ngx_http_access_commands[] = {
       0,
       NULL },
 
+    // 禁止某个地址范围访问
     { ngx_string("deny"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
                         |NGX_CONF_TAKE1,
@@ -122,6 +124,7 @@ ngx_module_t  ngx_http_access_module = {
 };
 
 
+// 每个http请求在NGX_HTTP_PREACCESS_PHASE阶段会调用的回调函数
 static ngx_int_t
 ngx_http_access_handler(ngx_http_request_t *r)
 {
@@ -182,6 +185,7 @@ ngx_http_access_handler(ngx_http_request_t *r)
 }
 
 
+// 在r为ipv4连接的情况下判断是否拒绝r
 static ngx_int_t
 ngx_http_access_inet(ngx_http_request_t *r, ngx_http_access_loc_conf_t *alcf,
     in_addr_t addr)
@@ -196,6 +200,7 @@ ngx_http_access_inet(ngx_http_request_t *r, ngx_http_access_loc_conf_t *alcf,
                        "access: %08XD %08XD %08XD",
                        addr, rule[i].mask, rule[i].addr);
 
+        // 当设置的某个地址范围包括r的地址时，决定这个阶段handler()的返回值
         if ((addr & rule[i].mask) == rule[i].addr) {
             return ngx_http_access_found(r, rule[i].deny);
         }
@@ -207,6 +212,7 @@ ngx_http_access_inet(ngx_http_request_t *r, ngx_http_access_loc_conf_t *alcf,
 
 #if (NGX_HAVE_INET6)
 
+// 在r为ipv6连接的情况下判断是否拒绝r
 static ngx_int_t
 ngx_http_access_inet6(ngx_http_request_t *r, ngx_http_access_loc_conf_t *alcf,
     u_char *p)
@@ -254,6 +260,7 @@ ngx_http_access_inet6(ngx_http_request_t *r, ngx_http_access_loc_conf_t *alcf,
 
 #if (NGX_HAVE_UNIX_DOMAIN)
 
+// 在r为unix socket连接的情况下判断是否拒绝r
 static ngx_int_t
 ngx_http_access_unix(ngx_http_request_t *r, ngx_http_access_loc_conf_t *alcf)
 {
@@ -275,6 +282,7 @@ ngx_http_access_unix(ngx_http_request_t *r, ngx_http_access_loc_conf_t *alcf)
 #endif
 
 
+// 根据deny决定返回NGX_OK还是NGX_HTTP_FORBIDDEN
 static ngx_int_t
 ngx_http_access_found(ngx_http_request_t *r, ngx_uint_t deny)
 {
@@ -295,6 +303,7 @@ ngx_http_access_found(ngx_http_request_t *r, ngx_uint_t deny)
 }
 
 
+// 解析配置文件时遇到allow和deny指令时会调用的回调函数
 static char *
 ngx_http_access_rule(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
@@ -453,6 +462,8 @@ ngx_http_access_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 }
 
 
+// postconfiguration回调函数
+// 将ngx_http_access_handler()加入到NGX_HTTP_ACCESS_PHASE阶段的回调函数中
 static ngx_int_t
 ngx_http_access_init(ngx_conf_t *cf)
 {

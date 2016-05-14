@@ -149,118 +149,148 @@ static ngx_int_t ngx_http_variable_time_local(ngx_http_request_t *r,
 
 static ngx_http_variable_t  ngx_http_core_variables[] = {
 
+    // $http_HEADER 表示当前HTTP请求中相应头部的值。HEADER名称全小写。例如，用$http_host表示请求中Host头部对应的值                                                
     { ngx_string("http_host"), NULL, ngx_http_variable_header,
       offsetof(ngx_http_request_t, headers_in.host), 0, 0 },
 
+    // $http_HEADER 表示当前HTTP请求中相应头部的值。HEADER名称全小写。例如，用$http_host表示请求中Host头部对应的值                                                
     { ngx_string("http_user_agent"), NULL, ngx_http_variable_header,
       offsetof(ngx_http_request_t, headers_in.user_agent), 0, 0 },
 
+    // $http_HEADER 表示当前HTTP请求中相应头部的值。HEADER名称全小写。例如，用$http_host表示请求中Host头部对应的值                                                
     { ngx_string("http_referer"), NULL, ngx_http_variable_header,
       offsetof(ngx_http_request_t, headers_in.referer), 0, 0 },
 
 #if (NGX_HTTP_GZIP)
+    // $http_HEADER 表示当前HTTP请求中相应头部的值。HEADER名称全小写。例如，用$http_host表示请求中Host头部对应的值                                                
     { ngx_string("http_via"), NULL, ngx_http_variable_header,
       offsetof(ngx_http_request_t, headers_in.via), 0, 0 },
 #endif
 
 #if (NGX_HTTP_X_FORWARDED_FOR)
+    // $http_HEADER 表示当前HTTP请求中相应头部的值。HEADER名称全小写。例如，用$http_host表示请求中Host头部对应的值                                                
     { ngx_string("http_x_forwarded_for"), NULL, ngx_http_variable_headers,
       offsetof(ngx_http_request_t, headers_in.x_forwarded_for), 0, 0 },
 #endif
 
+    // 客户端头部中cookie字段
     { ngx_string("http_cookie"), NULL, ngx_http_variable_cookies,
       offsetof(ngx_http_request_t, headers_in.cookies), 0, 0 },
 
+    // $content_length 表示客户端请求头部中的Content-Length字段                                                                                                   
     { ngx_string("content_length"), NULL, ngx_http_variable_content_length,
       0, 0, 0 },
 
+    // $content_type 表示客户端请求头部中的Content-Type字段                                                                                                       
     { ngx_string("content_type"), NULL, ngx_http_variable_header,
       offsetof(ngx_http_request_t, headers_in.content_type), 0, 0 },
 
+    // $host 表示客户端请求头部中的Host字段。如果Host字段不存在，则以实际处理的server（虚拟主机）名称代替。如果Host字段中带有端口，如IP:PORT，那么$host是去掉端口的，它的值为IP。$host是全小写的。这些特性>
     { ngx_string("host"), NULL, ngx_http_variable_host, 0, 0, 0 },
 
+    // $binary_remote_addr 二进制格式的客户端地址。例如：\x0A\xE0B\x0E                                                                                            
     { ngx_string("binary_remote_addr"), NULL,
       ngx_http_variable_binary_remote_addr, 0, 0, 0 },
 
+    // $remote_addr 表示客户端的地址                                                                                                                              
     { ngx_string("remote_addr"), NULL, ngx_http_variable_remote_addr, 0, 0, 0 },
 
+    // $remote_port 表示客户端连接使用的端口                                                                                                                      
     { ngx_string("remote_port"), NULL, ngx_http_variable_remote_port, 0, 0, 0 },
 
     { ngx_string("proxy_protocol_addr"), NULL,
       ngx_http_variable_proxy_protocol_addr, 0, 0, 0 },
 
+    // $server_addr 表示服务器地址                                                                                                                                
     { ngx_string("server_addr"), NULL, ngx_http_variable_server_addr, 0, 0, 0 },
 
     { ngx_string("server_port"), NULL, ngx_http_variable_server_port, 0, 0, 0 },
 
+    // $server_protocol 表示服务器向客户端发送响应的协议，如HTTP/1.1或HTTP/1.0 
     { ngx_string("server_protocol"), NULL, ngx_http_variable_request,
       offsetof(ngx_http_request_t, http_protocol), 0, 0 },
 
+    // $scheme 表示HTTP scheme，如在请求https://nginx.com/中表示https                                                                                             
     { ngx_string("scheme"), NULL, ngx_http_variable_scheme, 0, 0, 0 },
 
     { ngx_string("https"), NULL, ngx_http_variable_https, 0, 0, 0 },
 
+    // $request_uri 表示客户端发来的原始请求URI，带完整的参数。$uri和$document_uri未必是用户的原始请求，在内部重定向后可能是重定向后的URI，而$request_uri永远不会改变，始终是客户端的原始URI
     { ngx_string("request_uri"), NULL, ngx_http_variable_request,
       offsetof(ngx_http_request_t, unparsed_uri), 0, 0 },
 
+    // $uri 表示当前请求的URI，不带任何参数                                                                                                                       
     { ngx_string("uri"), NULL, ngx_http_variable_request,
       offsetof(ngx_http_request_t, uri),
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
+    // $document_uri 与$uri含义相同                                                                                                                               
     { ngx_string("document_uri"), NULL, ngx_http_variable_request,
       offsetof(ngx_http_request_t, uri),
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("request"), NULL, ngx_http_variable_request_line, 0, 0, 0 },
 
+    // $document_root 表示当前请求所使用的root配置项的值                                                                                                          
     { ngx_string("document_root"), NULL,
       ngx_http_variable_document_root, 0, NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("realpath_root"), NULL,
       ngx_http_variable_realpath_root, 0, NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
+    // $query_string 请求URI中的参数，与$args相同，然而$query_string是只读的不会改变                                                                              
     { ngx_string("query_string"), NULL, ngx_http_variable_request,
       offsetof(ngx_http_request_t, args),
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
+    // $args HTTP请求中的完整参数。例如，在请求/index.html?_w=120&_h=120中，$args表示字符串_w=120&_h=120                                                          
     { ngx_string("args"),
       ngx_http_variable_request_set,
       ngx_http_variable_request,
       offsetof(ngx_http_request_t, args),
       NGX_HTTP_VAR_CHANGEABLE|NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
+    // $is_args 表示请求中的URI是否带参数，如果带参数，$is_args值为?，如果不带参数，则是空字符串                                                                  
     { ngx_string("is_args"), NULL, ngx_http_variable_is_args,
       0, NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
+    // $request_filename 表示用户请求中的URI经过root或alias转换后的文件路径                                                                                       
     { ngx_string("request_filename"), NULL,
       ngx_http_variable_request_filename, 0,
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
+    // $server_port 表示服务器端口                                                                                                                                
     { ngx_string("server_name"), NULL, ngx_http_variable_server_name, 0, 0, 0 },
 
+    // $request_method 表示HTTP请求的方法名，如GET、PUT、POST等                                                                                                   
     { ngx_string("request_method"), NULL,
       ngx_http_variable_request_method, 0,
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
+    // $remote_user 表示使用Auth Basic Module时定义的用户名                                                                                                       
     { ngx_string("remote_user"), NULL, ngx_http_variable_remote_user, 0, 0, 0 },
 
     { ngx_string("bytes_sent"), NULL, ngx_http_variable_bytes_sent,
       0, 0, 0 },
 
+    // $body_bytes_sent 表示在向客户端发送的http响应中，包体部分的字节数                                                                                          
     { ngx_string("body_bytes_sent"), NULL, ngx_http_variable_body_bytes_sent,
       0, 0, 0 },
 
     { ngx_string("pipe"), NULL, ngx_http_variable_pipe,
       0, 0, 0 },
 
+    // $request_completion 当请求已经全部完成时，其值为“ok”。若没有完成，就要返回客户端，则其值为空字符串；或者在断点续传等情况下使用HTTP range访问的并不是文件的最后一块，那么其值也是空字符串
     { ngx_string("request_completion"), NULL,
       ngx_http_variable_request_completion,
       0, 0, 0 },
 
+    // $request_body 表示HTTP请求中的包体，该参数只在proxy_pass或fastcgi_pass中有意义                                                                             
     { ngx_string("request_body"), NULL,
       ngx_http_variable_request_body,
       0, 0, 0 },
 
+    // $request_body_file 表示HTTP请求中的包体存储的临时文件名                                                                                                    
     { ngx_string("request_body_file"), NULL,
       ngx_http_variable_request_body_file,
       0, 0, 0 },
@@ -275,30 +305,39 @@ static ngx_http_variable_t  ngx_http_core_variables[] = {
       ngx_http_variable_status, 0,
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
+    // $sent_http_HEADER 表示返回客户端的HTTP响应中相应头部的值。HEADER名称全小写。例如，用$sent_http_content_type表示响应中Content-Type头部对应的值              
     { ngx_string("sent_http_content_type"), NULL,
       ngx_http_variable_sent_content_type, 0, 0, 0 },
 
+    // $sent_http_HEADER 表示返回客户端的HTTP响应中相应头部的值。HEADER名称全小写。例如，用$sent_http_content_type表示响应中Content-Type头部对应的值              
     { ngx_string("sent_http_content_length"), NULL,
       ngx_http_variable_sent_content_length, 0, 0, 0 },
 
+    // $sent_http_HEADER 表示返回客户端的HTTP响应中相应头部的值。HEADER名称全小写。例如，用$sent_http_content_type表示响应中Content-Type头部对应的值              
     { ngx_string("sent_http_location"), NULL,
       ngx_http_variable_sent_location, 0, 0, 0 },
 
+    // $sent_http_HEADER 表示返回客户端的HTTP响应中相应头部的值。HEADER名称全小写。例如，用$sent_http_content_type表示响应中Content-Type头部对应的值              
     { ngx_string("sent_http_last_modified"), NULL,
       ngx_http_variable_sent_last_modified, 0, 0, 0 },
 
+    // $sent_http_HEADER 表示返回客户端的HTTP响应中相应头部的值。HEADER名称全小写。例如，用$sent_http_content_type表示响应中Content-Type头部对应的值              
     { ngx_string("sent_http_connection"), NULL,
       ngx_http_variable_sent_connection, 0, 0, 0 },
 
+    // $sent_http_HEADER 表示返回客户端的HTTP响应中相应头部的值。HEADER名称全小写。例如，用$sent_http_content_type表示响应中Content-Type头部对应的值              
     { ngx_string("sent_http_keep_alive"), NULL,
       ngx_http_variable_sent_keep_alive, 0, 0, 0 },
 
+    // $sent_http_HEADER 表示返回客户端的HTTP响应中相应头部的值。HEADER名称全小写。例如，用$sent_http_content_type表示响应中Content-Type头部对应的值              
     { ngx_string("sent_http_transfer_encoding"), NULL,
       ngx_http_variable_sent_transfer_encoding, 0, 0, 0 },
 
+    // $sent_http_HEADER 表示返回客户端的HTTP响应中相应头部的值。HEADER名称全小写。例如，用$sent_http_content_type表示响应中Content-Type头部对应的值              
     { ngx_string("sent_http_cache_control"), NULL, ngx_http_variable_headers,
       offsetof(ngx_http_request_t, headers_out.cache_control), 0, 0 },
 
+    // $limit_rate 表示当前连接的限速是多少，0表示无限速                                                                                                          
     { ngx_string("limit_rate"), ngx_http_variable_request_set_size,
       ngx_http_variable_request_get_size,
       offsetof(ngx_http_request_t, limit_rate),
@@ -310,9 +349,11 @@ static ngx_http_variable_t  ngx_http_core_variables[] = {
     { ngx_string("connection_requests"), NULL,
       ngx_http_variable_connection_requests, 0, 0, 0 },
 
+    // $nginx_version 表示当前Nginx的版本号，如1.0.14                                                                                                             
     { ngx_string("nginx_version"), NULL, ngx_http_variable_nginx_version,
       0, 0, 0 },
 
+    // $hostname 表示Nginx所在机器的名称，与gethostbyname调用返回的值相同                                                                                         
     { ngx_string("hostname"), NULL, ngx_http_variable_hostname,
       0, 0, 0 },
 
@@ -424,6 +465,8 @@ ngx_http_add_variable(ngx_conf_t *cf, ngx_str_t *name, ngx_uint_t flags)
 }
 
 
+// 将名字是name的变量加入cmcf->variables里,
+// return: 加入变量在cmcf->variables数组里的位置
 ngx_int_t
 ngx_http_get_variable_index(ngx_conf_t *cf, ngx_str_t *name)
 {
@@ -484,6 +527,7 @@ ngx_http_get_variable_index(ngx_conf_t *cf, ngx_str_t *name)
 }
 
 
+// 获取r对应的cmcf->variables中index位置的变量对应的值
 ngx_http_variable_value_t *
 ngx_http_get_indexed_variable(ngx_http_request_t *r, ngx_uint_t index)
 {
@@ -968,6 +1012,9 @@ ngx_http_variable_cookie(ngx_http_request_t *r, ngx_http_variable_value_t *v,
 }
 
 
+// 获取$arg_*变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
+// $arg_PARAMETER HTTP请求中某个参数的值，如/index.html?size=100，可以用$arg_size取得100这个值                                                                
 static ngx_int_t
 ngx_http_variable_argument(ngx_http_request_t *r, ngx_http_variable_value_t *v,
     uintptr_t data)
@@ -998,6 +1045,8 @@ ngx_http_variable_argument(ngx_http_request_t *r, ngx_http_variable_value_t *v,
 
 #if (NGX_HAVE_TCP_INFO)
 
+// 获取request_length变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_tcpinfo(ngx_http_request_t *r, ngx_http_variable_value_t *v,
     uintptr_t data)
@@ -1051,6 +1100,8 @@ ngx_http_variable_tcpinfo(ngx_http_request_t *r, ngx_http_variable_value_t *v,
 #endif
 
 
+// 获取content_length变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_content_length(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1084,6 +1135,8 @@ ngx_http_variable_content_length(ngx_http_request_t *r,
 }
 
 
+// 获取host变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_host(ngx_http_request_t *r, ngx_http_variable_value_t *v,
     uintptr_t data)
@@ -1109,6 +1162,8 @@ ngx_http_variable_host(ngx_http_request_t *r, ngx_http_variable_value_t *v,
 }
 
 
+// 获取binary_remote_addr变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_binary_remote_addr(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1149,6 +1204,8 @@ ngx_http_variable_binary_remote_addr(ngx_http_request_t *r,
 }
 
 
+// 获取remote_addr变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_remote_addr(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1163,6 +1220,8 @@ ngx_http_variable_remote_addr(ngx_http_request_t *r,
 }
 
 
+// 获取remote_port变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_remote_port(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1212,6 +1271,8 @@ ngx_http_variable_remote_port(ngx_http_request_t *r,
 }
 
 
+// 获取proxy_protocol_addr变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_proxy_protocol_addr(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1226,6 +1287,8 @@ ngx_http_variable_proxy_protocol_addr(ngx_http_request_t *r,
 }
 
 
+// 获取server_addr变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_server_addr(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1257,6 +1320,8 @@ ngx_http_variable_server_addr(ngx_http_request_t *r,
 }
 
 
+// 获取server_port变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_server_port(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1310,6 +1375,8 @@ ngx_http_variable_server_port(ngx_http_request_t *r,
 }
 
 
+// 获取scheme变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_scheme(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1338,6 +1405,8 @@ ngx_http_variable_scheme(ngx_http_request_t *r,
 }
 
 
+// 获取https变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_https(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1362,6 +1431,8 @@ ngx_http_variable_https(ngx_http_request_t *r,
 }
 
 
+// 获取is_args变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_is_args(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1383,6 +1454,8 @@ ngx_http_variable_is_args(ngx_http_request_t *r,
 }
 
 
+// 获取document_root变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_document_root(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1424,6 +1497,8 @@ ngx_http_variable_document_root(ngx_http_request_t *r,
 }
 
 
+// 获取realpath_root变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_realpath_root(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1497,6 +1572,8 @@ ngx_http_variable_realpath_root(ngx_http_request_t *r,
 }
 
 
+// 获取request_filename变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_request_filename(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1520,6 +1597,8 @@ ngx_http_variable_request_filename(ngx_http_request_t *r,
 }
 
 
+// 获取server_name变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_server_name(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1538,6 +1617,8 @@ ngx_http_variable_server_name(ngx_http_request_t *r,
 }
 
 
+// 获取request_method变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_request_method(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1557,6 +1638,8 @@ ngx_http_variable_request_method(ngx_http_request_t *r,
 }
 
 
+// 获取remote_user变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_remote_user(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1584,6 +1667,8 @@ ngx_http_variable_remote_user(ngx_http_request_t *r,
 }
 
 
+// 获取bytes_sent变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_bytes_sent(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1605,6 +1690,8 @@ ngx_http_variable_bytes_sent(ngx_http_request_t *r,
 }
 
 
+// 获取body_bytes_sent变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_body_bytes_sent(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1633,6 +1720,8 @@ ngx_http_variable_body_bytes_sent(ngx_http_request_t *r,
 }
 
 
+// 获取pipe变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_pipe(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1647,6 +1736,8 @@ ngx_http_variable_pipe(ngx_http_request_t *r,
 }
 
 
+// 获取status变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_status(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1680,6 +1771,8 @@ ngx_http_variable_status(ngx_http_request_t *r,
 }
 
 
+// 获取sent_content_type变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_sent_content_type(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1699,6 +1792,8 @@ ngx_http_variable_sent_content_type(ngx_http_request_t *r,
 }
 
 
+// 获取sent_content_length变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_sent_content_length(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1736,6 +1831,8 @@ ngx_http_variable_sent_content_length(ngx_http_request_t *r,
 }
 
 
+// 获取sent_location变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_sent_location(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1760,6 +1857,8 @@ ngx_http_variable_sent_location(ngx_http_request_t *r,
 }
 
 
+// 获取sent_last_modified变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_sent_last_modified(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1797,6 +1896,8 @@ ngx_http_variable_sent_last_modified(ngx_http_request_t *r,
 }
 
 
+// 获取sent_connection变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_sent_connection(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1827,6 +1928,8 @@ ngx_http_variable_sent_connection(ngx_http_request_t *r,
 }
 
 
+// 获取sent_keep_alive变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_sent_keep_alive(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1860,6 +1963,8 @@ ngx_http_variable_sent_keep_alive(ngx_http_request_t *r,
 }
 
 
+// 获取sent_transfer_encoding变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_sent_transfer_encoding(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1879,6 +1984,8 @@ ngx_http_variable_sent_transfer_encoding(ngx_http_request_t *r,
 }
 
 
+// 获取request_completion变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_request_completion(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1903,6 +2010,8 @@ ngx_http_variable_request_completion(ngx_http_request_t *r,
 }
 
 
+// 获取request_body变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_request_body(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1964,6 +2073,8 @@ ngx_http_variable_request_body(ngx_http_request_t *r,
 }
 
 
+// 获取request_body_file变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_request_body_file(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -1984,6 +2095,8 @@ ngx_http_variable_request_body_file(ngx_http_request_t *r,
 }
 
 
+// 获取request_length变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_request_length(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -2005,6 +2118,8 @@ ngx_http_variable_request_length(ngx_http_request_t *r,
 }
 
 
+// 获取request_time变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_request_time(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -2034,6 +2149,8 @@ ngx_http_variable_request_time(ngx_http_request_t *r,
 }
 
 
+// 获取connection变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_connection(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -2055,6 +2172,8 @@ ngx_http_variable_connection(ngx_http_request_t *r,
 }
 
 
+// 获取connection_requests变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_connection_requests(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -2076,6 +2195,8 @@ ngx_http_variable_connection_requests(ngx_http_request_t *r,
 }
 
 
+// 获取nginx_version变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_nginx_version(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -2090,6 +2211,8 @@ ngx_http_variable_nginx_version(ngx_http_request_t *r,
 }
 
 
+// 获取hostname变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_hostname(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -2104,6 +2227,8 @@ ngx_http_variable_hostname(ngx_http_request_t *r,
 }
 
 
+// 获取pid变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_pid(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -2125,6 +2250,8 @@ ngx_http_variable_pid(ngx_http_request_t *r,
 }
 
 
+// 获取msec变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler
 static ngx_int_t
 ngx_http_variable_msec(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -2149,6 +2276,8 @@ ngx_http_variable_msec(ngx_http_request_t *r,
 }
 
 
+// 获取time_iso8601变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler 
 static ngx_int_t
 ngx_http_variable_time_iso8601(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -2173,6 +2302,8 @@ ngx_http_variable_time_iso8601(ngx_http_request_t *r,
 }
 
 
+// 获取time_local变量的回调函数
+// 这个函数会赋值给ngx_http_variable_t::get_handler 
 static ngx_int_t
 ngx_http_variable_time_local(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -2411,7 +2542,8 @@ ngx_http_regex_exec(ngx_http_request_t *r, ngx_http_regex_t *re, ngx_str_t *s)
 #endif
 
 
-// 将全区数组ngx_http_core_variables中定义的变量加入到哈希表中
+// 将全区数组ngx_http_core_variables中定义的变量加入到cmcf->variables_keys中
+// 在解析配置文件之前调用
 ngx_int_t
 ngx_http_variables_add_core_vars(ngx_conf_t *cf)
 {
@@ -2559,6 +2691,7 @@ ngx_http_variables_init_vars(ngx_conf_t *cf)
     }
 
 
+    // 初始化哈希表
     hash.hash = &cmcf->variables_hash;
     hash.key = ngx_hash_key;
     hash.max_size = cmcf->variables_hash_max_size;

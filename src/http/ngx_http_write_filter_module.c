@@ -5,7 +5,7 @@
  */
 
 // 这个文件是一个http filter模块，
-// 用于对http header和http body进行实际发送。
+// 用于对之前模块组装好的http header和http body进行实际发送。
 
 #include <ngx_config.h>
 #include <ngx_core.h>
@@ -46,6 +46,10 @@ ngx_module_t  ngx_http_write_filter_module = {
 };
 
 
+// 这个函数会有三个地方调用，
+// ngx_http_top_body_filter链表最后一个函数
+// ngx_http_header_filter()会调用这个函数
+// ngx_http_writer()会调用这个函数
 ngx_int_t
 ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {
@@ -68,6 +72,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
     ll = &r->out;
 
     /* find the size, the flush point and the last link of the saved chain */
+    // 将in加到r->out后面，同时计算出两个相加后的内存总大小
 
     for (cl = r->out; cl; cl = cl->next) {
         ll = &cl->next;
@@ -178,10 +183,13 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
      */
 
     if (!last && !flush && in && size < (off_t) clcf->postpone_output) {
+    // 如果不是最后一个buf，也没有flush标志位，
+    // 当前已有的发送内容的大小也小于最小单次发送内容的大小，就直接返回
         return NGX_OK;
     }
 
     if (c->write->delayed) {
+    // delayed标志位为1，暂时不发送响应
         c->buffered |= NGX_HTTP_WRITE_BUFFERED;
         return NGX_AGAIN;
     }
@@ -211,6 +219,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
         return NGX_ERROR;
     }
 
+    // 计算本次应发送给客户端的字节数
     if (r->limit_rate) {
         if (r->limit_rate_after == 0) {
             r->limit_rate_after = clcf->limit_rate_after;
@@ -220,6 +229,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
                 - (c->sent - r->limit_rate_after);
 
         if (limit <= 0) {
+        // 发送速度已超过限值,将delayed标志位置1，加定时器返回
             c->write->delayed = 1;
             ngx_add_timer(c->write,
                           (ngx_msec_t) (- limit * 1000 / r->limit_rate + 1));
@@ -244,6 +254,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0,
                    "http write filter limit %O", limit);
 
+    // 发送响应到客户端
     chain = c->send_chain(c, r->out, limit);
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0,
@@ -274,6 +285,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
         delay = (ngx_msec_t) ((nsent - sent) * 1000 / r->limit_rate);
 
         if (delay > 0) {
+        // 发送速度已超过限值,将delayed标志位置1，加定时器
             limit = 0;
             c->write->delayed = 1;
             ngx_add_timer(c->write, delay);
@@ -288,6 +300,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
         ngx_add_timer(c->write, 1);
     }
 
+    // 在r->out中移除已发送完的部分
     for (cl = r->out; cl && cl != chain; /* void */) {
         ln = cl;
         cl = cl->next;
@@ -311,6 +324,8 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
 }
 
 
+// ngx_http_module_t::postconfiguration回调函数
+// 将ngx_http_write_filter置为ngx_http_top_body_filter链表最后一个调用的函数
 static ngx_int_t
 ngx_http_write_filter_init(ngx_conf_t *cf)
 {

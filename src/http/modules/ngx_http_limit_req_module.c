@@ -5,7 +5,7 @@
  */
 
 // 这个文件是一个加入到NGX_HTTP_PREACCESS_PHASE阶段的http handler模块
-// 这个模块用于限制单一ip的请求速率
+// 这个模块用于限制同一ip或同一其他变量值的单位时间内的最多请求数量
 
 #include <ngx_config.h>
 #include <ngx_core.h>
@@ -13,6 +13,7 @@
 
 
 typedef struct {
+    // 这个color不能被使用，是为了衔接ngx_rbtree_node_t的color
     u_char                       color;
     u_char                       dummy;
     u_short                      len;
@@ -94,6 +95,8 @@ static ngx_conf_num_bounds_t  ngx_http_limit_req_status_bounds = {
 
 static ngx_command_t  ngx_http_limit_req_commands[] = {
 
+    // 例：limit_req_zone $binary_remote_addr zone=one:10m rate=1r/s
+    // binary_remote_addr相同的连接每秒请求数不超过一个
     { ngx_string("limit_req_zone"),
       NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE3,
       ngx_http_limit_req_zone,
@@ -101,6 +104,7 @@ static ngx_command_t  ngx_http_limit_req_commands[] = {
       0,
       NULL },
 
+    // limit_req zone=name [burst=number] [nodelay];
     { ngx_string("limit_req"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE123,
       ngx_http_limit_req,
@@ -108,6 +112,7 @@ static ngx_command_t  ngx_http_limit_req_commands[] = {
       0,
       NULL },
 
+    // 当超限时，打印log的级别
     { ngx_string("limit_req_log_level"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_enum_slot,
@@ -115,6 +120,7 @@ static ngx_command_t  ngx_http_limit_req_commands[] = {
       offsetof(ngx_http_limit_req_conf_t, limit_log_level),
       &ngx_http_limit_req_log_levels },
 
+    // 当超限时，返回的http错误码
     { ngx_string("limit_req_status"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_num_slot,
@@ -157,6 +163,7 @@ ngx_module_t  ngx_http_limit_req_module = {
 };
 
 
+// 每个http请求在NGX_HTTP_PREACCESS_PHASE阶段会调用的回调函数
 static ngx_int_t
 ngx_http_limit_req_handler(ngx_http_request_t *r)
 {
@@ -623,6 +630,7 @@ ngx_http_limit_req_expire(ngx_http_limit_req_ctx_t *ctx, ngx_uint_t n)
 }
 
 
+// 这个模块使用的每一块共享内存区初始化时都会调用的回调函数
 static ngx_int_t
 ngx_http_limit_req_init_zone(ngx_shm_zone_t *shm_zone, void *data)
 {
@@ -684,6 +692,7 @@ ngx_http_limit_req_init_zone(ngx_shm_zone_t *shm_zone, void *data)
 }
 
 
+// ngx_http_module_t::create_loc_conf回调函数
 static void *
 ngx_http_limit_req_create_conf(ngx_conf_t *cf)
 {
@@ -707,6 +716,7 @@ ngx_http_limit_req_create_conf(ngx_conf_t *cf)
 }
 
 
+// ngx_http_module_t::merge_loc_conf回调函数
 static char *
 ngx_http_limit_req_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 {
@@ -729,7 +739,7 @@ ngx_http_limit_req_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     return NGX_CONF_OK;
 }
 
-
+// 解析配置文件时遇到limit_req_zone指令时会调用的回调函数
 static char *
 ngx_http_limit_req_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
@@ -873,6 +883,7 @@ ngx_http_limit_req_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 }
 
 
+// 解析配置文件时遇到limit_req指令时会调用的回调函数
 static char *
 ngx_http_limit_req(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
@@ -972,6 +983,8 @@ ngx_http_limit_req(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 }
 
 
+// ngx_http_module_t::postconfiguration回调函数
+// 将ngx_http_limit_req_handler()加入到NGX_HTTP_PREACCESS_PHASE阶段的回调函数中
 static ngx_int_t
 ngx_http_limit_req_init(ngx_conf_t *cf)
 {

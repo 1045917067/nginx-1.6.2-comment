@@ -823,7 +823,7 @@ done:
     return NGX_OK;
 }
 
-
+// 解析客户端请求的头部
 ngx_int_t
 ngx_http_parse_header_line(ngx_http_request_t *r, ngx_buf_t *b,
     ngx_uint_t allow_underscores)
@@ -1093,6 +1093,7 @@ header_done:
 }
 
 
+// 只在spdy模块中有用
 ngx_int_t
 ngx_http_parse_uri(ngx_http_request_t *r)
 {
@@ -1580,6 +1581,7 @@ args:
 }
 
 
+// 在反向代理相关模块中调用这个函数,解析上游服务器返回的状态行
 ngx_int_t
 ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
     ngx_http_status_t *status)
@@ -1985,6 +1987,12 @@ ngx_http_parse_multi_header_lines(ngx_array_t *headers, ngx_str_t *name,
 }
 
 
+// 取出r中，名字为name的参数的值
+// r[in]: 找这个请求中的参数
+// name[in]: 参数名字字符串的首地址
+// len[in]: 参数名字字符串的长度
+// value[out]: 参数的值
+// return: 成功返回NGX_OK，没有找到这个参数返回NGX_DECLINED
 ngx_int_t
 ngx_http_arg(ngx_http_request_t *r, u_char *name, size_t len, ngx_str_t *value)
 {

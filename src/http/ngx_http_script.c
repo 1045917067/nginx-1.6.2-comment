@@ -4,7 +4,7 @@
  * Copyright (C) Nginx, Inc.
  */
 
-// 这组头文件和实现文件实现了在配置文件的指令中使用变量的接口。
+// 这组头文件和实现文件实现了在配置文件中使用变量的接口。
 
 #include <ngx_config.h>
 #include <ngx_core.h>
@@ -315,6 +315,7 @@ ngx_http_set_predicate_slot(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 }
 
 
+// 在value字符串中使用了几个变量，也就是包含几个"$"
 ngx_uint_t
 ngx_http_script_variables_count(ngx_str_t *value)
 {

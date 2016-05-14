@@ -20,6 +20,7 @@
 
 // 对writev()进行封装, 
 // writev()用与发送不连续的几块内存。
+// return: 剩下的链表头部
 ngx_chain_t *
 ngx_writev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 {

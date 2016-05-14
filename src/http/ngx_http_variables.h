@@ -34,11 +34,16 @@ typedef ngx_int_t (*ngx_http_get_variable_pt) (ngx_http_request_t *r,
 
 
 struct ngx_http_variable_s {
+    // 这个变量的名字
     ngx_str_t                     name;   /* must be first to build the hash */
+    // 体现lazy_handle的策略，只有使用到变量，才会调用这个回调函数计算变量值
     ngx_http_set_variable_pt      set_handler;
+    // 体现active_handle的策略，每执行一个请求，都会调用这个回调函数计算变量值。
     ngx_http_get_variable_pt      get_handler;
+    // 作为set_handler()和get_handler()第三个参数
     uintptr_t                     data;
     ngx_uint_t                    flags;
+    // cmcf->variables索引变量时使用
     ngx_uint_t                    index;
 };
 

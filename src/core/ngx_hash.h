@@ -48,6 +48,7 @@ typedef struct {
     ngx_str_t         key;
     // 上面key的hash值
     ngx_uint_t        key_hash;
+    // 用户自定义数据指针
     void             *value;
 } ngx_hash_key_t;
 
@@ -102,9 +103,8 @@ typedef struct {
     ngx_pool_t       *pool;
     ngx_pool_t       *temp_pool;
 
-    // ngx_hash_key_t数组
-    ngx_array_t       keys;
-    ngx_array_t      *keys_hash;
+    ngx_array_t       keys;         // ngx_hash_key_t
+    ngx_array_t      *keys_hash;    // ngx_str_t
 
     ngx_array_t       dns_wc_head;
     ngx_array_t      *dns_wc_head_hash;

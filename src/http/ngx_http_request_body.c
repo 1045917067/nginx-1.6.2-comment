@@ -30,7 +30,8 @@ static ngx_int_t ngx_http_request_body_save_filter(ngx_http_request_t *r,
 
 // 读取客户端发给nginx的http包体。
 // webdav的PUT等方法会调用这个函数接收客户端包体，
-// 做反向代理时回调用这个函数，接收上游服务器包体。
+// 做反向代理时用这个函数接收客户端包体传递给上游服务器。
+// post_handler[in]: 没有包体直接返回前或接收包体完成时调用的回调函数
 ngx_int_t
 ngx_http_read_client_request_body(ngx_http_request_t *r,
     ngx_http_client_body_handler_pt post_handler)
@@ -57,6 +58,8 @@ ngx_http_read_client_request_body(ngx_http_request_t *r,
         return NGX_OK;
     }
 
+    // 如果请求的headers里有"expect: 100-continue"字段，
+    // 给客户端发送"HTTP/1.1 100 Continue" CRLF CRLF。
     if (ngx_http_test_expect(r) != NGX_OK) {
         rc = NGX_HTTP_INTERNAL_SERVER_ERROR;
         goto done;
@@ -233,6 +236,7 @@ ngx_http_read_client_request_body_handler(ngx_http_request_t *r)
     ngx_int_t  rc;
 
     if (r->connection->read->timedout) {
+    // 接收包体超时。
         r->connection->timedout = 1;
         ngx_http_finalize_request(r, NGX_HTTP_REQUEST_TIME_OUT);
         return;
@@ -491,6 +495,8 @@ ngx_http_write_request_body(ngx_http_request_t *r)
 }
 
 
+// 不处理包体时应调用的函数。
+// 不处理包体，仍然需要接收，否则可能引起其他问题。
 ngx_int_t
 ngx_http_discard_request_body(ngx_http_request_t *r)
 {
@@ -578,6 +584,7 @@ ngx_http_discarded_request_body_handler(ngx_http_request_t *r)
     rev = c->read;
 
     if (rev->timedout) {
+    // 接收包体超时。
         c->timedout = 1;
         c->error = 1;
         ngx_http_finalize_request(r, NGX_ERROR);
@@ -781,6 +788,9 @@ ngx_http_discard_request_body_filter(ngx_http_request_t *r, ngx_buf_t *b)
 }
 
 
+// 如果请求的headers里有"expect: 100-continue"字段，
+// 给客户端发送"HTTP/1.1 100 Continue" CRLF CRLF。
+// 客户端不收到这个字符串有可能不开始发送包体
 static ngx_int_t
 ngx_http_test_expect(ngx_http_request_t *r)
 {

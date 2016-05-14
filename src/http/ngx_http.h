@@ -4,6 +4,7 @@
  * Copyright (C) Nginx, Inc.
  */
 
+// 这个头文件声明了一些http框架相关的结构体和函数
 
 #ifndef _NGX_HTTP_H_INCLUDED_
 #define _NGX_HTTP_H_INCLUDED_

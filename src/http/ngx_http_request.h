@@ -171,6 +171,7 @@ typedef struct {
 } ngx_http_header_out_t;
 
 
+// 客户端发来的http头部
 typedef struct {
     ngx_list_t                        headers;
 
@@ -242,6 +243,7 @@ typedef struct {
 } ngx_http_headers_in_t;
 
 
+// 即将发送给客户端的http状态行和头部
 typedef struct {
     ngx_list_t                        headers;
 
@@ -358,14 +360,22 @@ typedef ngx_int_t (*ngx_http_handler_pt)(ngx_http_request_t *r);
 typedef void (*ngx_http_event_handler_pt)(ngx_http_request_t *r);
 
 
+// 这个结构体的一个对象对应一个客户端的请求
+// 或者对应一个连接外部服务器的子请求
 struct ngx_http_request_s {
+    // 只有赋值，没有使用
     uint32_t                          signature;         /* "HTTP" */
 
+    // 这个请求对应的连接
     ngx_connection_t                 *connection;
 
+    // 指向所有模块的上下文
     void                            **ctx;
+    // 指向main级别的配置
     void                            **main_conf;
+    // 指向server级别的配置
     void                            **srv_conf;
+    // 指向location级别的配置
     void                            **loc_conf;
 
     ngx_http_event_handler_pt         read_event_handler;
@@ -375,22 +385,32 @@ struct ngx_http_request_s {
     ngx_http_cache_t                 *cache;
 #endif
 
+    // 当没有回源请求时，这个成员为空，
+    // 当有回源请求时，这个成员记录了一些回源用到的信息
     ngx_http_upstream_t              *upstream;
     ngx_array_t                      *upstream_states;
                                          /* of ngx_http_upstream_state_t */
 
     ngx_pool_t                       *pool;
+    // 客户端发送来的首行和头部
     ngx_buf_t                        *header_in;
 
+    // 收到客户端发来的http请求头部
     ngx_http_headers_in_t             headers_in;
+    // 即将发送给客户端的http响应头部
     ngx_http_headers_out_t            headers_out;
 
     ngx_http_request_body_t          *request_body;
 
+    // 延迟关闭连接的时间
     time_t                            lingering_time;
+    // 这个结构体对象创建的时间
+    // 时间表示法为1970年1月1日到当前秒数
     time_t                            start_sec;
+    // 相对于上个成员变量的毫秒偏移
     ngx_msec_t                        start_msec;
 
+    // 以下9个成员是解析http请求的首行解析出的
     ngx_uint_t                        method;
     ngx_uint_t                        http_version;
 
@@ -403,15 +423,22 @@ struct ngx_http_request_s {
     ngx_str_t                         method_name;
     ngx_str_t                         http_protocol;
 
+    // 待发送的缓冲区
     ngx_chain_t                      *out;
+    // 如果当前请求是原始请求则指向自身，
+    // 如果不是则指向这个请求对应的原始请求
     ngx_http_request_t               *main;
+    // 指向当前请求的父请求
     ngx_http_request_t               *parent;
     ngx_http_postponed_request_t     *postponed;
     ngx_http_post_subrequest_t       *post_subrequest;
     ngx_http_posted_request_t        *posted_requests;
 
+    // 标识当前运行到http11个阶段的哪个回调函数
     ngx_int_t                         phase_handler;
+    // 介入到NGX_HTTP_CONTENT_PHASE阶段的一个回调函数。
     ngx_http_handler_pt               content_handler;
+    // 如果在NGX_HTTP_ACCESS_PHASE阶段将这个成员置为非零，说明该请求没有访问权限
     ngx_uint_t                        access_code;
 
     ngx_http_variable_value_t        *variables;
@@ -422,12 +449,15 @@ struct ngx_http_request_s {
     u_char                           *captures_data;
 #endif
 
+    // 限速大小，每秒可发送的最大字节数
     size_t                            limit_rate;
+    // 在发送http响应时，发送到多少字节以内不进行限速
     size_t                            limit_rate_after;
 
     /* used to learn the Apache compatible response length without a header */
     size_t                            header_size;
 
+    // http请求的长度，包括包体
     off_t                             request_length;
 
     ngx_uint_t                        err_status;

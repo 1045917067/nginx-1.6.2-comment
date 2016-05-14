@@ -52,7 +52,7 @@ ngx_module_t  ngx_errlog_module = {
 
 // main()开始至ngx_init_cycle()前半部分用的log 
 static ngx_log_t        ngx_log;
-// ngx_log中用的log文件
+// ngx_log全局变量结构体中的file成员
 static ngx_open_file_t  ngx_log_file;
 // 如果这个标识位为1，NGX_LOG_WARN以上级别的日志都打印一份到终端。
 // 在启动快结束时被修改成0。

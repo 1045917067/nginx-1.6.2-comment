@@ -196,6 +196,7 @@ ngx_http_addition_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 }
 
 
+// ngx_http_module_t::postconfiguration回调函数
 static ngx_int_t
 ngx_http_addition_filter_init(ngx_conf_t *cf)
 {

@@ -5,7 +5,7 @@
  */
 
 // 这组头文件和实现文件声明了ngx_event_pipe_t结构体，并定义了相关操作函数。
-// 主要在upstream回源时，以上游网速转发响应用到的接口
+// 在upstream回源时以上游网速转发响应会用到
 
 #ifndef _NGX_EVENT_PIPE_H_INCLUDED_
 #define _NGX_EVENT_PIPE_H_INCLUDED_

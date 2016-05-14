@@ -10,6 +10,7 @@
 #include <ngx_core.h>
 
 
+// 根据key和name在哈希表hash中查找相应元素作为返回值
 void *
 ngx_hash_find(ngx_hash_t *hash, ngx_uint_t key, u_char *name, size_t len)
 {
@@ -635,6 +636,7 @@ ngx_hash_key_lc(u_char *data, size_t len)
 }
 
 
+// 把src转化成小写放到dst中，同时把dst的哈希值作为返回值
 ngx_uint_t
 ngx_hash_strlow(u_char *dst, u_char *src, size_t n)
 {
@@ -653,6 +655,7 @@ ngx_hash_strlow(u_char *dst, u_char *src, size_t n)
 }
 
 
+// ngx_hash_keys_array_t的操作函数，初始化ha
 ngx_int_t
 ngx_hash_keys_array_init(ngx_hash_keys_arrays_t *ha, ngx_uint_t type)
 {
@@ -708,6 +711,7 @@ ngx_hash_keys_array_init(ngx_hash_keys_arrays_t *ha, ngx_uint_t type)
 }
 
 
+// ngx_hash_keys_arrays_t的操作函数，把关键字key和对应的键值value放入ha中
 ngx_int_t
 ngx_hash_add_key(ngx_hash_keys_arrays_t *ha, ngx_str_t *key, void *value,
     ngx_uint_t flags)

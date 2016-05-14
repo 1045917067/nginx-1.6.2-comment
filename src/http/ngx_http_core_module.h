@@ -53,6 +53,8 @@ typedef struct ngx_http_location_tree_node_s  ngx_http_location_tree_node_t;
 typedef struct ngx_http_core_loc_conf_s  ngx_http_core_loc_conf_t;
 
 
+// 配置文件中一个listen指令的信息会存到这个结构体的一个对象里，
+// 这个结构体是组成ngx_http_conf_addr_t结构体的一部分。
 typedef struct {
     union {
         struct sockaddr        sockaddr;
@@ -110,23 +112,39 @@ typedef struct {
 } ngx_http_listen_opt_t;
 
 
+// http请求处理的11个阶段。
 typedef enum {
+    // 在收到完整的http请求头部后进入这个阶段的处理函数。
+    // 不可以将自定义模块中的回调函数加入到这个阶段
     NGX_HTTP_POST_READ_PHASE = 0,
 
     NGX_HTTP_SERVER_REWRITE_PHASE,
 
+	// 根据请求的uri寻找请求对应的location
     NGX_HTTP_FIND_CONFIG_PHASE,
     NGX_HTTP_REWRITE_PHASE,
+    // 不可以将自定义模块中的回调函数加入到这个阶段
     NGX_HTTP_POST_REWRITE_PHASE,
 
+    // NGX_HTTP_ACCESS_PHASE之前的阶段。
     NGX_HTTP_PREACCESS_PHASE,
 
+    // 用与判断请求是否被拒绝往往被放在这个阶段。
+    // 这个阶段的处理效果是修改r->access_code。
     NGX_HTTP_ACCESS_PHASE,
+
+    // NGX_HTTP_ACCESS_PHASE阶段后的阶段。
+    // 不可以将自定义模块中的回调函数加入到这个阶段
     NGX_HTTP_POST_ACCESS_PHASE,
 
+    // 这个阶段是为try_files功能而设立
+    // 不可以将自定义模块中的回调函数加入到这个阶段
     NGX_HTTP_TRY_FILES_PHASE,
+
+    // 生成http响应内容的阶段。
     NGX_HTTP_CONTENT_PHASE,
 
+    // 其他阶段结束后记录log的阶段。
     NGX_HTTP_LOG_PHASE
 } ngx_http_phases;
 
@@ -135,60 +153,94 @@ typedef struct ngx_http_phase_handler_s  ngx_http_phase_handler_t;
 typedef ngx_int_t (*ngx_http_phase_handler_pt)(ngx_http_request_t *r,
     ngx_http_phase_handler_t *ph);
 
+// 一个这个结构体的对象对应一个http回调函数
+// 在不可以插入自定义函数的几个阶段，在checker()里处理要处理的内容，handler()无用
+// 在可以插入自定义函数的几个阶段，checker()是运行handler()的载体。
 struct ngx_http_phase_handler_s {
+    // 在这个阶段的http框架处理函数,
     ngx_http_phase_handler_pt  checker;
+    // 某个http模块在这个阶段加入的回调函数。
     ngx_http_handler_pt        handler;
+    // 下一个阶段的第一个ngx_http_phase_handler_t对象在cmcf->phase_engine.handlers中的位置
     ngx_uint_t                 next;
 };
 
 
+// 存放http请求处理11阶段的回调函数。
 typedef struct {
+    // 一个数组，存放http请求处理11阶段所有的回调函数
     ngx_http_phase_handler_t  *handlers;
+    // NGX_HTTP_SERVER_REWRITE_PHASE阶段在handlers数组里的位置
     ngx_uint_t                 server_rewrite_index;
+    // NGX_HTTP_REWRITE_PHASE阶段在handlers数组里的位置
     ngx_uint_t                 location_rewrite_index;
 } ngx_http_phase_engine_t;
 
 
+// http请求处理11个阶段中一个阶段的回调函数集合。
 typedef struct {
-    ngx_array_t                handlers;
+    ngx_array_t                handlers;   // ngx_http_handler_pt
 } ngx_http_phase_t;
 
 
+// 这个结构体在内存中只有一个实例对象。
 typedef struct {
-    ngx_array_t                servers;         /* ngx_http_core_srv_conf_t */
+    // 数组元素是ngx_http_core_srv_conf_t *
+    // 这个数组里包含指向所有server层配置的指针
+    ngx_array_t                servers;
 
+    // nginx接收完请求的头部后通过这个成员调用11个阶段的处理函数，
+    // NGX_HTTP_LOG_PHASE阶段的回调函数不通过这个成员调用。
     ngx_http_phase_engine_t    phase_engine;
 
+    // ngx_http_headers_in数组元素组成的散列表。
     ngx_hash_t                 headers_in_hash;
 
+    // 配置文件中的变量名的散列表。由这个结构体的variables_keys成员生成，
+    // 这个成员中的元素与variables_keys中的元素一一对应。
     ngx_hash_t                 variables_hash;
 
+    // 这个数组里的变量可以用index的方式进行索引
     ngx_array_t                variables;       /* ngx_http_variable_t */
     ngx_uint_t                 ncaptures;
 
+    // 初始化server_name的哈希表时使用
     ngx_uint_t                 server_names_hash_max_size;
     ngx_uint_t                 server_names_hash_bucket_size;
 
+    // 初始化变量的哈希表时用
     ngx_uint_t                 variables_hash_max_size;
     ngx_uint_t                 variables_hash_bucket_size;
 
+    // 初始化variables_hash散列表用，
+    // 在postconfiguration()回调函数以及这之前的加入到这个数组里的配置文件可用变量名最终都
     ngx_hash_keys_arrays_t    *variables_keys;
 
-    ngx_array_t               *ports;
+    // 
+    ngx_array_t               *ports;           /* ngx_http_conf_port_t */
 
+    // 配置文件是否出现过'try_files'字段
     ngx_uint_t                 try_files;       /* unsigned  try_files:1 */
 
+    // 在postconfiguration()回调函数以及这之前的加入到这个数组里的函数最终都会被
+    // 添加到请求处理11个阶段的相应阶段中。
+    // NGX_HTTP_LOG_PHASE阶段通过这个成员调用每个回调函数
+    ngx_http_phase_engine_t    phase_engine;
     ngx_http_phase_t           phases[NGX_HTTP_LOG_PHASE + 1];
 } ngx_http_core_main_conf_t;
 
 
+// 配置文件中每个"http{"字段和每个"server{"字段分别对应一个ngx_http_core_srv_conf_t对象
 typedef struct {
     /* array of the ngx_http_server_name_t, "server_name" directive */
-    ngx_array_t                 server_names;
+    // 这个server对应的主机名，可以是多个，可以带通配符。
+	ngx_array_t                 server_names;  // ngx_http_server_name_t
 
     /* server ctx */
+
     ngx_http_conf_ctx_t        *ctx;
 
+    // 这个server默认的server_name，如果配置第一个server_name，会选取第一个作为默认的server_name。
     ngx_str_t                   server_name;
 
     size_t                      connection_pool_size;
@@ -210,6 +262,7 @@ typedef struct {
 
     ngx_http_core_loc_conf_t  **named_locations;
 } ngx_http_core_srv_conf_t;
+
 
 
 /* list of structures to find core_srv_conf quickly at run time */
@@ -304,6 +357,7 @@ typedef struct {
 } ngx_http_err_page_t;
 
 
+// 某一个location的try_files属性
 typedef struct {
     ngx_array_t               *lengths;
     ngx_array_t               *values;
@@ -314,7 +368,9 @@ typedef struct {
 } ngx_http_try_file_t;
 
 
+// 配置文件中每个"http{"、"server{"和"location{"字段分别对应一个ngx_http_core_srv_conf_t对象
 struct ngx_http_core_loc_conf_s {
+	// location的名字，不包括"^"、"~"等符号部分。
     ngx_str_t     name;          /* location name */
 
 #if (NGX_PCRE)
@@ -325,6 +381,7 @@ struct ngx_http_core_loc_conf_s {
     unsigned      lmt_excpt:1;
     unsigned      named:1;
 
+    // 如果为1，说明配置文件中的location指令中有"="，是精确匹配
     unsigned      exact_match:1;
     unsigned      noregex:1;
 
@@ -341,6 +398,7 @@ struct ngx_http_core_loc_conf_s {
     ngx_http_core_loc_conf_t       **regex_locations;
 #endif
 
+    // 当这个结构体对象对应一个"location{"时，这个成员指向父层配置对应的ngx_http_conf_ctx_t::loc_conf
     /* pointer to the modules' loc_conf */
     void        **loc_conf;
 
@@ -445,6 +503,10 @@ struct ngx_http_core_loc_conf_s {
     ngx_uint_t    types_hash_max_size;
     ngx_uint_t    types_hash_bucket_size;
 
+    // "http{"指令对应的这个结构体对象，这个成员无用。
+    // "server{"指令对应的这个结构体对象，这个成员指向这个"server{"里第一层子"location{"的location配置队列。
+    // "location{"指令对应的这个结构体对象，这个成员指向这个"location{"里第一层子"location{"的location配置队列。
+    // ("location{"指令中可以嵌套"location{")
     ngx_queue_t  *locations;
 
 #if 0

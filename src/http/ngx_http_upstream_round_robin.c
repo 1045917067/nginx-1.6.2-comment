@@ -4,6 +4,7 @@
  * Copyright (C) Nginx, Inc.
  */
 
+// 这组头文件和实现文件定义了轮询负载均衡模块的一些函数
 
 #include <ngx_config.h>
 #include <ngx_core.h>
