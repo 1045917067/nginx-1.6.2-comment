@@ -16,7 +16,7 @@
 
 这篇注释的网址：https://github.com/langsim/nginx-1.6.2-comment
 
-推荐的读写工具：https://github.com/langsim/vim-ide
+推荐的读写工具：https://github.com/langsim/notepad-ken
 
 
 ### 完成程度
